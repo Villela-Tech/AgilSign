@@ -37,32 +37,39 @@ export interface TermoDetalhes {
   assinatura?: string;
 }
 
+export interface CriarTermoDTO {
+  nome: string;
+  sobrenome: string;
+  email: string;
+  equipamento: string;
+}
+
 export interface AtualizarStatusDTO {
-  status: 'pendente' | 'assinado';
-  assinatura?: string;
+  status: 'assinado';
+  assinatura: string;
 }
 
 export const TermoService = {
   // Criar novo termo
-  async criar(data: TermoData): Promise<TermoResponse> {
-    const response = await api.post<TermoResponse>('/termos', data);
+  criar: async (data: CriarTermoDTO): Promise<TermoDetalhes> => {
+    const response = await api.post<TermoDetalhes>('/termos', data);
     return response.data;
   },
 
   // Buscar termo por ID
-  async buscarPorId(id: string): Promise<TermoDetalhes> {
+  buscarPorId: async (id: string): Promise<TermoDetalhes> => {
     const response = await api.get<TermoDetalhes>(`/termos/${id}`);
     return response.data;
   },
 
   // Listar todos os termos
-  async listar(): Promise<TermoDetalhes[]> {
+  listar: async (): Promise<TermoDetalhes[]> => {
     const response = await api.get<TermoDetalhes[]>('/termos');
     return response.data;
   },
 
   // Atualizar status do termo
-  async atualizarStatus(id: string, data: AtualizarStatusDTO): Promise<TermoDetalhes> {
+  atualizarStatus: async (id: string, data: AtualizarStatusDTO): Promise<TermoDetalhes> => {
     const response = await api.patch<TermoDetalhes>(`/termos/${id}/status`, data);
     return response.data;
   },
@@ -70,6 +77,25 @@ export const TermoService = {
   // Gerar URL de acesso para assinatura
   gerarUrlAcesso(id: string): string {
     return `${FRONTEND_URL}/assinar/${id}`;
+  },
+
+  downloadPDF: async (id: string): Promise<Blob> => {
+    const response = await api.get(`/termos/${id}/pdf`, {
+      responseType: 'blob',
+      headers: {
+        Accept: 'application/pdf'
+      }
+    });
+    const blobData = response.data as ArrayBuffer;
+    return new Blob([blobData], { type: 'application/pdf' });
+  },
+
+  gerarLinkAssinatura: (id: string): string => {
+    return `${FRONTEND_URL}/assinar/${id}`;
+  },
+
+  gerarLinkVisualizacao: (id: string): string => {
+    return `${FRONTEND_URL}/visualizar/${id}`;
   }
 };
 

@@ -6,7 +6,7 @@ import AssinarTermo from './components/AssinarTermo';
 import VisualizarTermo from './components/VisualizarTermo';
 import Dashboard from './components/Dashboard';
 
-const AppRoutes: React.FC = () => {
+export default function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
@@ -18,6 +18,4 @@ const AppRoutes: React.FC = () => {
       </Routes>
     </BrowserRouter>
   );
-};
-
-export default AppRoutes; 
+} 

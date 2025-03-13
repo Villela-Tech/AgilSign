@@ -99,7 +99,7 @@ export const generateTermoRecebimento = async (data: TermoRecebimentoData) => {
   // Data e Local
   currentY += 15;
   const dataAtual = data.data || new Date().toLocaleDateString('pt-BR');
-  doc.text('São Paulo, ' + dataAtual, pageWidth - marginRight - 50, currentY);
+  doc.text( + dataAtual, pageWidth - marginRight - 50, currentY);
 
   // Área de assinatura
   currentY += 30;
@@ -115,7 +115,7 @@ export const generateTermoRecebimento = async (data: TermoRecebimentoData) => {
 
   // Linha para assinatura
   doc.setDrawColor(0);
-  doc.line(marginLeft, currentY + 20, pageWidth / 2 - 10, currentY + 20);
+  doc.line(marginLeft, currentY + 10, pageWidth / 2 - 10, currentY + 10);
   doc.setFontSize(10);
   doc.text('Assinatura', marginLeft, currentY + 25);
 

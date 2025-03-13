@@ -18,4 +18,10 @@ router.get('/termos', TermoController.listar);
 // Atualizar status do termo
 router.patch('/termos/:id/status', TermoController.atualizarStatus);
 
+// Excluir termo
+router.delete('/termos/:id', TermoController.excluir);
+
+// Download do PDF do termo
+router.get('/termos/:id/pdf', TermoController.downloadPDF);
+
 export default router; 

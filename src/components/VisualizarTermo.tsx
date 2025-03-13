@@ -1,28 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { TermoService, TermoDetalhes } from '../services/api';
-import CopiarUrl from './CopiarUrl';
 import './VisualizarTermo.css';
 
-const VisualizarTermo = () => {
+const VisualizarTermo: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [termo, setTermo] = useState<TermoDetalhes | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const carregarTermo = async () => {
       try {
-        if (!id) {
-          setError('ID do termo não fornecido');
-          return;
-        }
+        if (!id) return;
         const data = await TermoService.buscarPorId(id);
         setTermo(data);
-      } catch (error) {
-        console.error('Erro ao carregar termo:', error);
-        setError('Não foi possível carregar o termo. Por favor, tente novamente.');
+      } catch (err) {
+        setError('Erro ao carregar o termo. Por favor, tente novamente.');
+        console.error('Erro ao carregar termo:', err);
       } finally {
         setLoading(false);
       }
@@ -31,21 +28,55 @@ const VisualizarTermo = () => {
     carregarTermo();
   }, [id]);
 
+  const handleDownload = async () => {
+    if (!termo) return;
+    
+    setDownloading(true);
+    try {
+      const blob = await TermoService.downloadPDF(termo.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `termo-${termo.nome.toLowerCase()}-${termo.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Erro ao baixar termo:', err);
+      setError('Não foi possível baixar o termo. Por favor, tente novamente.');
+      setTimeout(() => setError(null), 5000); // Limpa o erro após 5 segundos
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const formatarData = (data: string) => {
+    return new Date(data).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   if (loading) {
     return (
       <div className="visualizar-container">
-        <div className="loading">Carregando...</div>
+        <div className="loading-spinner"></div>
+        <p>Carregando termo...</p>
       </div>
     );
   }
 
-  if (error || !termo || !id) {
+  if (error || !termo) {
     return (
       <div className="visualizar-container">
-        <div className="error">
-          <p>{error || 'Termo não encontrado'}</p>
-          <button onClick={() => navigate('/')} className="voltar-button">
-            Voltar ao Início
+        <div className="error-message">
+          {error || 'Termo não encontrado'}
+          <button onClick={() => navigate('/dashboard')} className="voltar-button">
+            Voltar ao Dashboard
           </button>
         </div>
       </div>
@@ -54,42 +85,75 @@ const VisualizarTermo = () => {
 
   return (
     <div className="visualizar-container">
-      <img src="/images/logo.png" alt="Logo" className="logo" />
-      
-      <div className="visualizar-card">
-        <h2 className="visualizar-title">Termo de Recebimento</h2>
-        
-        <div className="termo-info">
-          <div className="info-group">
-            <h3>Dados do Recebedor</h3>
-            <p><strong>Nome:</strong> {termo.nome} {termo.sobrenome}</p>
-            <p><strong>Email:</strong> {termo.email}</p>
-          </div>
-
-          <div className="info-group">
-            <h3>Equipamento</h3>
-            <p>{termo.equipamento}</p>
-          </div>
-
-          <div className="info-group">
-            <h3>Status</h3>
-            <p className={`status ${termo.status}`}>{termo.status}</p>
-          </div>
-
-          <div className="info-group">
-            <h3>Link para Assinatura</h3>
-            <CopiarUrl id={id} />
-          </div>
+      <div className="termo-card">
+        <div className="termo-header">
+          <h2>Termo de Recebimento</h2>
+          <span className={`status-badge ${termo.status}`}>
+            {termo.status === 'pendente' ? 'Pendente' : 'Assinado'}
+          </span>
         </div>
 
-        <div className="actions">
-          <button onClick={() => navigate('/')} className="voltar-button">
-            Voltar ao Início
+        <div className="termo-content">
+          <div className="termo-section">
+            <h3>Dados do Recebedor</h3>
+            <div className="info-grid">
+              <div className="info-item">
+                <label>Nome:</label>
+                <p>{termo.nome} {termo.sobrenome}</p>
+              </div>
+              <div className="info-item">
+                <label>Email:</label>
+                <p>{termo.email}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="termo-section">
+            <h3>Equipamento</h3>
+            <div className="info-grid">
+              <div className="info-item">
+                <label>Descrição:</label>
+                <p>{termo.equipamento}</p>
+              </div>
+              <div className="info-item">
+                <label>Data de Criação:</label>
+                <p>{formatarData(termo.dataCriacao)}</p>
+              </div>
+            </div>
+          </div>
+
+          {termo.status === 'assinado' && (
+            <div className="termo-section">
+              <h3>Assinatura</h3>
+              <div className="assinatura-preview">
+                <img src={termo.assinatura} alt="Assinatura" />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="termo-actions">
+          <button onClick={() => navigate('/dashboard')} className="voltar-button">
+            Voltar ao Dashboard
+          </button>
+          <button 
+            onClick={handleDownload} 
+            className="download-button"
+            disabled={termo.status === 'pendente' || downloading}
+          >
+            {downloading ? (
+              <>
+                <div className="loading-spinner-small"></div>
+                <span>Baixando...</span>
+              </>
+            ) : (
+              <>
+                <span>⬇️</span> Baixar Termo
+              </>
+            )}
           </button>
         </div>
       </div>
-
-      <p className="copyright">© Desenvolvido por Villela Tech</p>
     </div>
   );
 };

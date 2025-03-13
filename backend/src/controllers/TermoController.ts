@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Termo from '../models/Termo';
+import { generateTermoRecebimento } from '../services/pdfService';
 
 export const TermoController = {
   // Criar novo termo
@@ -113,6 +114,36 @@ export const TermoController = {
     } catch (error) {
       console.error('Erro ao excluir termo:', error);
       return res.status(500).json({ error: 'Erro ao excluir termo' });
+    }
+  },
+
+  // Gerar e baixar PDF do termo
+  async downloadPDF(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const termo = await Termo.findByPk(id);
+      
+      if (!termo) {
+        return res.status(404).json({ error: 'Termo não encontrado' });
+      }
+
+      const pdfDoc = await generateTermoRecebimento({
+        nome: termo.nome,
+        sobrenome: termo.sobrenome,
+        email: termo.email,
+        equipamento: termo.equipamento,
+        assinatura: termo.assinatura,
+        data: termo.createdAt.toLocaleDateString('pt-BR')
+      });
+
+      const pdfBytes = pdfDoc.output('arraybuffer');
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=termo-${termo.nome.toLowerCase()}-${termo.id}.pdf`);
+      res.send(Buffer.from(pdfBytes));
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      return res.status(500).json({ error: 'Erro ao gerar PDF do termo' });
     }
   }
 }; 

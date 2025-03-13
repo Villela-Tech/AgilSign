@@ -64,7 +64,7 @@ const TermoCompromisso: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -86,11 +86,11 @@ const TermoCompromisso: React.FC = () => {
       console.log('Enviando dados:', termoData); // Log para debug
 
       const response = await TermoService.criar(termoData);
-      
+
       console.log('Resposta do servidor:', response); // Log para debug
 
       if (response && response.id) {
-        navigate(`/visualizar/${response.id}`);
+        navigate(`/url/${response.id}`);
       } else {
         throw new Error('Resposta inválida do servidor');
       }
@@ -104,7 +104,7 @@ const TermoCompromisso: React.FC = () => {
 
   return (
     <div className="termo-container">
-      <img src="/images/logo.png" alt="Logo" className="logo" />
+      <img src="/images/logo.png" alt="Logo" className="logo" style={{ width: '100px', height: '100px' }} />
 
       <div className="termo-form">
         <h2 className="termo-title">Termo de Compromisso</h2>
@@ -118,7 +118,7 @@ const TermoCompromisso: React.FC = () => {
         <form onSubmit={handleSubmit} noValidate>
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="nome">Nome *</label>
+              <label htmlFor="nome">Nome</label>
               <input
                 type="text"
                 id="nome"
@@ -130,7 +130,7 @@ const TermoCompromisso: React.FC = () => {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="sobrenome">Sobrenome *</label>
+              <label htmlFor="sobrenome">Sobrenome</label>
               <input
                 type="text"
                 id="sobrenome"
@@ -144,7 +144,7 @@ const TermoCompromisso: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">Email *</label>
+            <label htmlFor="email">Email</label>
             <input
               type="email"
               id="email"
@@ -157,7 +157,7 @@ const TermoCompromisso: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="equipamento">Equipamento *</label>
+            <label htmlFor="equipamento">Equipamento</label>
             <input
               type="text"
               id="equipamento"
@@ -182,7 +182,7 @@ const TermoCompromisso: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="numeroSerie">Nº Série *</label>
+            <label htmlFor="numeroSerie">Nº Série</label>
             <input
               type="text"
               id="numeroSerie"
@@ -195,7 +195,7 @@ const TermoCompromisso: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="data">Data *</label>
+            <label htmlFor="data">Data</label>
             <input
               type="date"
               id="data"
@@ -207,9 +207,9 @@ const TermoCompromisso: React.FC = () => {
             />
           </div>
 
-          <button 
-            type="submit" 
-            className="submit-button" 
+          <button
+            type="submit"
+            className="submit-button"
             disabled={loading}
           >
             {loading ? 'Gerando URL...' : 'Gerar URL'}
@@ -217,7 +217,7 @@ const TermoCompromisso: React.FC = () => {
         </form>
       </div>
 
-      <p className="copyright">© Desenvolvido por Villela Tech</p>
+      <p className="copyright">© Desenvolvido por Villela Tech </p>
     </div>
   );
 };
