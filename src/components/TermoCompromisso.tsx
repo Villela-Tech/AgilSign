@@ -1,17 +1,33 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { TermoService } from '../services/api';
 import './TermoCompromisso.css';
 
-const TermoCompromisso = () => {
+interface FormData {
+  nome: string;
+  sobrenome: string;
+  email: string;
+  equipamento: string;
+  equipe: string;
+  numeroSerie: string;
+  data: string;
+}
+
+const initialFormData: FormData = {
+  nome: '',
+  sobrenome: '',
+  email: '',
+  equipamento: '',
+  equipe: '',
+  numeroSerie: '',
+  data: ''
+};
+
+const TermoCompromisso: React.FC = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    nome: '',
-    sobrenome: '',
-    equipamento: '',
-    equipe: '',
-    numeroSerie: '',
-    data: ''
-  });
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [error, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -19,13 +35,71 @@ const TermoCompromisso = () => {
       ...prev,
       [name]: value
     }));
+    setError(null); // Limpa erro quando usuário começa a digitar
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validateForm = (): boolean => {
+    if (!formData.nome.trim()) {
+      setError('Nome é obrigatório');
+      return false;
+    }
+    if (!formData.sobrenome.trim()) {
+      setError('Sobrenome é obrigatório');
+      return false;
+    }
+    if (!formData.email.trim() || !formData.email.includes('@')) {
+      setError('Email inválido');
+      return false;
+    }
+    if (!formData.equipamento.trim()) {
+      setError('Equipamento é obrigatório');
+      return false;
+    }
+    if (!formData.numeroSerie.trim()) {
+      setError('Número de série é obrigatório');
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Aqui você pode implementar a lógica real de geração da URL
-    const urlId = 'asdj-asdko'; // Este ID seria gerado pelo seu backend
-    navigate(`/url/${urlId}`);
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Prepara os dados conforme a interface TermoData
+      const termoData = {
+        nome: formData.nome.trim(),
+        sobrenome: formData.sobrenome.trim(),
+        email: formData.email.trim(),
+        equipamento: `${formData.equipamento.trim()} (S/N: ${formData.numeroSerie.trim()})`,
+        equipe: formData.equipe.trim(),
+        data: formData.data
+      };
+
+      console.log('Enviando dados:', termoData); // Log para debug
+
+      const response = await TermoService.criar(termoData);
+      
+      console.log('Resposta do servidor:', response); // Log para debug
+
+      if (response && response.id) {
+        navigate(`/visualizar/${response.id}`);
+      } else {
+        throw new Error('Resposta inválida do servidor');
+      }
+    } catch (err) {
+      console.error('Erro detalhado:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao gerar URL. Por favor, tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -35,10 +109,16 @@ const TermoCompromisso = () => {
       <div className="termo-form">
         <h2 className="termo-title">Termo de Compromisso</h2>
 
-        <form onSubmit={handleSubmit}>
+        {error && (
+          <div className="error-message">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} noValidate>
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="nome">Nome</label>
+              <label htmlFor="nome">Nome *</label>
               <input
                 type="text"
                 id="nome"
@@ -46,10 +126,11 @@ const TermoCompromisso = () => {
                 value={formData.nome}
                 onChange={handleChange}
                 required
+                disabled={loading}
               />
             </div>
             <div className="form-group">
-              <label htmlFor="sobrenome">Sobrenome</label>
+              <label htmlFor="sobrenome">Sobrenome *</label>
               <input
                 type="text"
                 id="sobrenome"
@@ -57,12 +138,26 @@ const TermoCompromisso = () => {
                 value={formData.sobrenome}
                 onChange={handleChange}
                 required
+                disabled={loading}
               />
             </div>
           </div>
 
           <div className="form-group">
-            <label htmlFor="equipamento">Equipamento</label>
+            <label htmlFor="email">Email *</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="equipamento">Equipamento *</label>
             <input
               type="text"
               id="equipamento"
@@ -70,6 +165,7 @@ const TermoCompromisso = () => {
               value={formData.equipamento}
               onChange={handleChange}
               required
+              disabled={loading}
             />
           </div>
 
@@ -81,12 +177,12 @@ const TermoCompromisso = () => {
               name="equipe"
               value={formData.equipe}
               onChange={handleChange}
-              required
+              disabled={loading}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="numeroSerie">Nº Série</label>
+            <label htmlFor="numeroSerie">Nº Série *</label>
             <input
               type="text"
               id="numeroSerie"
@@ -94,11 +190,12 @@ const TermoCompromisso = () => {
               value={formData.numeroSerie}
               onChange={handleChange}
               required
+              disabled={loading}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="data">Data</label>
+            <label htmlFor="data">Data *</label>
             <input
               type="date"
               id="data"
@@ -106,11 +203,16 @@ const TermoCompromisso = () => {
               value={formData.data}
               onChange={handleChange}
               required
+              disabled={loading}
             />
           </div>
 
-          <button type="submit" className="submit-button">
-            Gerar URL
+          <button 
+            type="submit" 
+            className="submit-button" 
+            disabled={loading}
+          >
+            {loading ? 'Gerando URL...' : 'Gerar URL'}
           </button>
         </form>
       </div>

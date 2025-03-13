@@ -5,129 +5,146 @@
   align-items: center;
   background-color: #51C5EA;
   padding: 20px;
-  position: relative;
 }
 
 .logo {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  width: 48px;
+  width: 200px;
   height: auto;
+  margin-bottom: 30px;
 }
 
 .assinar-card {
   background: white;
-  padding: 2rem;
-  border-radius: 8px;
+  border-radius: 10px;
+  padding: 20px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 800px;
-  margin: 60px auto;
+  max-width: 600px;
+  margin-bottom: 20px;
 }
 
 .assinar-title {
-  text-align: center;
   color: #333;
-  margin-bottom: 2rem;
-  font-size: 1.5rem;
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 24px;
 }
 
-.form-group {
-  display: grid;
-  gap: 1rem;
-  margin-bottom: 2rem;
+.signature-instructions {
+  text-align: center;
+  margin-bottom: 20px;
 }
 
-.form-input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
-  font-size: 1rem;
-  transition: border-color 0.2s;
+.signature-instructions p {
+  margin: 5px 0;
+  color: #666;
 }
 
-.form-input:focus {
-  outline: none;
-  border-color: #51C5EA;
+.signature-note {
+  font-size: 14px;
+  color: #888;
+  font-style: italic;
 }
 
-.signature-area {
-  margin-bottom: 2rem;
-  position: relative;
+.signature-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
 }
 
 .signature-canvas {
-  border: 1px solid #e2e8f0;
+  border: 1px solid #ccc;
   border-radius: 4px;
-  background-color: white;
-  margin-bottom: 0.5rem;
+  touch-action: none;
+  background-color: #fff;
+}
+
+.signature-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+}
+
+.limpar-button,
+.assinar-button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .limpar-button {
-  position: absolute;
-  right: 0;
-  bottom: -30px;
-  background: none;
-  border: none;
-  color: #51C5EA;
-  cursor: pointer;
-  font-size: 0.875rem;
+  background-color: #f0f0f0;
+  color: #666;
 }
 
 .limpar-button:hover {
-  text-decoration: underline;
+  background-color: #e0e0e0;
 }
 
 .assinar-button {
-  width: 100%;
-  padding: 0.75rem;
   background-color: #51C5EA;
   color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  font-weight: bold;
 }
 
 .assinar-button:hover:not(:disabled) {
-  background-color: #3BA3C6;
+  background-color: #3ab1d9;
 }
 
 .assinar-button:disabled {
-  background-color: #CBD5E0;
+  background-color: #ccc;
   cursor: not-allowed;
 }
 
-.copyright {
-  position: fixed;
-  bottom: 20px;
-  left: 0;
-  right: 0;
+.loading,
+.error {
   text-align: center;
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  margin: 20px;
+}
+
+.error {
+  color: #d32f2f;
+}
+
+.copyright {
   color: white;
-  font-size: 0.875rem;
+  text-align: center;
+  margin-top: auto;
+  padding: 20px 0;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   .assinar-card {
-    padding: 1rem;
-    margin: 40px auto;
+    padding: 15px;
+    margin: 10px;
   }
 
-  .form-group {
-    gap: 0.75rem;
+  .logo {
+    width: 150px;
+    margin-bottom: 20px;
   }
 
-  .signature-canvas {
-    height: 150px !important;
+  .assinar-title {
+    font-size: 20px;
+    margin-bottom: 20px;
   }
-}
 
-@media (min-width: 640px) {
-  .form-group {
-    grid-template-columns: repeat(2, 1fr);
+  .signature-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .limpar-button,
+  .assinar-button {
+    width: 100%;
+    padding: 15px;
   }
 } 

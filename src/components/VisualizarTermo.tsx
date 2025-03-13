@@ -14,7 +14,10 @@ const VisualizarTermo = () => {
   useEffect(() => {
     const carregarTermo = async () => {
       try {
-        if (!id) return;
+        if (!id) {
+          setError('ID do termo não fornecido');
+          return;
+        }
         const data = await TermoService.buscarPorId(id);
         setTermo(data);
       } catch (error) {
@@ -36,7 +39,7 @@ const VisualizarTermo = () => {
     );
   }
 
-  if (error || !termo) {
+  if (error || !termo || !id) {
     return (
       <div className="visualizar-container">
         <div className="error">
@@ -75,7 +78,7 @@ const VisualizarTermo = () => {
 
           <div className="info-group">
             <h3>Link para Assinatura</h3>
-            <CopiarUrl url={`http://localhost:3000/assinar/${termo.id}`} />
+            <CopiarUrl id={id} />
           </div>
         </div>
 

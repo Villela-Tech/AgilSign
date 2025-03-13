@@ -1,36 +1,35 @@
 import React, { useState } from 'react';
+import { TermoService } from '../services/api';
+import './CopiarUrl.css';
 
 interface CopiarUrlProps {
-  url: string;
+  id: string;
 }
 
-const CopiarUrl: React.FC<CopiarUrlProps> = ({ url }) => {
+const CopiarUrl: React.FC<CopiarUrlProps> = ({ id }) => {
   const [copiado, setCopiado] = useState(false);
 
-  const handleCopiarLink = async () => {
+  // Gera a URL de acesso usando o serviço
+  const url = TermoService.gerarUrlAcesso(id);
+
+  const handleCopiarClick = async () => {
     try {
       await navigator.clipboard.writeText(url);
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2000);
     } catch (err) {
-      console.error('Erro ao copiar:', err);
+      console.error('Erro ao copiar URL:', err);
+      alert('Não foi possível copiar o link automaticamente. Por favor, copie manualmente.');
     }
   };
 
   return (
-    <div className="url-box">
-      <input
-        type="text"
-        value={url}
-        readOnly
-        className="url-input"
-        onClick={(e) => (e.target as HTMLInputElement).select()}
-      />
-      <button
-        onClick={handleCopiarLink}
-        className={`copiar-button ${copiado ? 'copiado' : ''}`}
-      >
-        {copiado ? 'Copiado!' : 'Copiar Link'}
+    <div className="copiar-url">
+      <div className="url-display" onClick={() => handleCopiarClick()}>
+        {url}
+      </div>
+      <button onClick={handleCopiarClick} className="copiar-button">
+        {copiado ? 'Link Copiado!' : 'Copiar Link'}
       </button>
     </div>
   );

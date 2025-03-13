@@ -4,12 +4,14 @@ import TermoCompromisso from './components/TermoCompromisso';
 import UrlGerada from './components/UrlGerada';
 import AssinarTermo from './components/AssinarTermo';
 import VisualizarTermo from './components/VisualizarTermo';
+import Dashboard from './components/Dashboard';
 
 const AppRoutes: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<TermoCompromisso />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/url/:id" element={<UrlGerada />} />
         <Route path="/assinar/:id" element={<AssinarTermo />} />
         <Route path="/visualizar/:id" element={<VisualizarTermo />} />

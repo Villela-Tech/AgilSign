@@ -1,143 +1,122 @@
-import React, { useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useRef, useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import SignatureCanvas from 'react-signature-canvas';
-import { TermoService } from '../services/api';
-import { generateTermoRecebimento } from '../services/pdfService';
+import { TermoService, TermoDetalhes, AtualizarStatusDTO } from '../services/api';
 import './AssinarTermo.css';
 
-type SignatureCanvasRef = SignatureCanvas | null;
-
 const AssinarTermo = () => {
-  const navigate = useNavigate();
   const { id } = useParams();
-  const sigCanvas = useRef<SignatureCanvasRef>(null);
-  const [assinado, setAssinado] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [nome, setNome] = useState('');
-  const [sobrenome, setSobrenome] = useState('');
-  const [email, setEmail] = useState('');
-  const [equipamento, setEquipamento] = useState('');
+  const navigate = useNavigate();
+  const signatureRef = useRef<SignatureCanvas>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [termo, setTermo] = useState<TermoDetalhes | null>(null);
+  const [signed, setSigned] = useState(false);
+
+  useEffect(() => {
+    const carregarTermo = async () => {
+      try {
+        if (!id) return;
+        const data = await TermoService.buscarPorId(id);
+        setTermo(data);
+      } catch (error) {
+        console.error('Erro ao carregar termo:', error);
+        setError('Não foi possível carregar o termo. Por favor, tente novamente.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    carregarTermo();
+  }, [id]);
 
   const handleLimpar = () => {
-    sigCanvas.current?.clear();
-    setAssinado(false);
+    if (signatureRef.current) {
+      signatureRef.current.clear();
+      setSigned(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!assinado || !sigCanvas.current) {
-      alert('Por favor, faça sua assinatura antes de continuar.');
+    if (!signatureRef.current || !termo) return;
+
+    if (signatureRef.current.isEmpty()) {
+      alert('Por favor, assine o documento antes de enviar.');
       return;
     }
 
     try {
-      setLoading(true);
-
-      // Obter a assinatura como base64
-      const canvas = sigCanvas.current.getCanvas();
-      const assinaturaBase64 = canvas.toDataURL('image/png');
-      
-      // Criar o termo no backend
-      const termoData = {
-        nome,
-        sobrenome,
-        email,
-        equipamento,
-        assinatura: assinaturaBase64,
+      const updateData: AtualizarStatusDTO = {
+        status: 'assinado',
+        assinatura: signatureRef.current.toDataURL()
       };
-
-      const response = await TermoService.criar(termoData);
       
-      // Gerar o PDF
-      const doc = await generateTermoRecebimento(termoData);
-      doc.save('termo-recebimento.pdf');
-      
-      // Redirecionar para a página de visualização
-      navigate(`/visualizar/${response.id}`);
-      
+      await TermoService.atualizarStatus(termo.id, updateData);
+      navigate(`/visualizar/${termo.id}`);
     } catch (error) {
-      console.error('Erro ao processar termo:', error);
-      alert('Ocorreu um erro ao processar o termo. Por favor, tente novamente.');
-    } finally {
-      setLoading(false);
+      console.error('Erro ao salvar assinatura:', error);
+      setError('Erro ao salvar assinatura. Por favor, tente novamente.');
     }
   };
+
+  if (loading) {
+    return (
+      <div className="assinar-container">
+        <div className="loading">Carregando...</div>
+      </div>
+    );
+  }
+
+  if (error || !termo) {
+    return (
+      <div className="assinar-container">
+        <div className="error">
+          <p>{error || 'Termo não encontrado'}</p>
+          <button onClick={() => navigate('/')} className="voltar-button">
+            Voltar ao Início
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="assinar-container">
       <img src="/images/logo.png" alt="Logo" className="logo" />
       
       <div className="assinar-card">
-        <h2 className="assinar-title">Termo de Recebimento</h2>
+        <h2 className="assinar-title">Assinatura Digital</h2>
         
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <input
-              type="text"
-              placeholder="Nome"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              className="form-input"
-              required
-            />
-            <input
-              type="text"
-              placeholder="Sobrenome"
-              value={sobrenome}
-              onChange={(e) => setSobrenome(e.target.value)}
-              className="form-input"
-              required
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="form-input"
-              required
-            />
-            <input
-              type="text"
-              placeholder="Equipamento"
-              value={equipamento}
-              onChange={(e) => setEquipamento(e.target.value)}
-              className="form-input"
-              required
-            />
-          </div>
+        <div className="signature-instructions">
+          <p>Use seu dedo ou mouse para assinar abaixo</p>
+          <p className="signature-note">Assine da maneira mais similar à sua assinatura usual</p>
+        </div>
 
-          <div className="signature-area">
-            <SignatureCanvas
-              ref={sigCanvas}
-              canvasProps={{
-                className: 'signature-canvas',
-                width: 600,
-                height: 200,
-                style: {
-                  width: '100%',
-                  maxWidth: '600px',
-                  height: '200px'
-                }
-              }}
-              onBegin={() => setAssinado(true)}
-            />
-            <button 
-              type="button" 
-              className="limpar-button"
-              onClick={handleLimpar}
-            >
+        <div className="signature-container">
+          <SignatureCanvas
+            ref={signatureRef}
+            canvasProps={{
+              className: 'signature-canvas',
+              width: window.innerWidth > 500 ? 500 : window.innerWidth - 40,
+              height: 200
+            }}
+            onEnd={() => setSigned(true)}
+          />
+          <div className="signature-actions">
+            <button type="button" onClick={handleLimpar} className="limpar-button">
               Limpar
             </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              className="assinar-button"
+              disabled={!signed}
+            >
+              Confirmar Assinatura
+            </button>
           </div>
-
-          <button 
-            type="submit" 
-            className="assinar-button"
-            disabled={!assinado || loading}
-          >
-            {loading ? 'Processando...' : 'Assinar e Gerar PDF'}
-          </button>
-        </form>
+        </div>
       </div>
 
       <p className="copyright">© Desenvolvido por Villela Tech</p>

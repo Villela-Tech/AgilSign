@@ -1,7 +1,12 @@
 import axios from 'axios';
 
+// URL base da API
+export const API_URL = 'http://localhost:3001/api';
+// URL base do frontend
+export const FRONTEND_URL = 'http://localhost:3000';
+
 const api = axios.create({
-  baseURL: 'http://localhost:3001/api'
+  baseURL: API_URL
 });
 
 export interface TermoData {
@@ -9,7 +14,10 @@ export interface TermoData {
   sobrenome: string;
   email: string;
   equipamento: string;
-  assinatura: string;
+  equipe: string;
+  data: string;
+  urlAcesso?: string;
+  assinatura?: string;
 }
 
 export interface TermoResponse {
@@ -23,10 +31,15 @@ export interface TermoDetalhes {
   sobrenome: string;
   email: string;
   equipamento: string;
-  status: string;
+  status: 'pendente' | 'assinado';
   dataCriacao: string;
   urlAcesso: string;
-  assinatura: string;
+  assinatura?: string;
+}
+
+export interface AtualizarStatusDTO {
+  status: 'pendente' | 'assinado';
+  assinatura?: string;
 }
 
 export const TermoService = {
@@ -49,8 +62,15 @@ export const TermoService = {
   },
 
   // Atualizar status do termo
-  async atualizarStatus(id: string, status: 'pendente' | 'assinado'): Promise<TermoDetalhes> {
-    const response = await api.patch<TermoDetalhes>(`/termos/${id}/status`, { status });
+  async atualizarStatus(id: string, data: AtualizarStatusDTO): Promise<TermoDetalhes> {
+    const response = await api.patch<TermoDetalhes>(`/termos/${id}/status`, data);
     return response.data;
+  },
+
+  // Gerar URL de acesso para assinatura
+  gerarUrlAcesso(id: string): string {
+    return `${FRONTEND_URL}/assinar/${id}`;
   }
-}; 
+};
+
+export default api; 
