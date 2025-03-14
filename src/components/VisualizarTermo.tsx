@@ -45,7 +45,7 @@ const VisualizarTermo: React.FC = () => {
     } catch (err) {
       console.error('Erro ao baixar termo:', err);
       setError('Não foi possível baixar o termo. Por favor, tente novamente.');
-      setTimeout(() => setError(null), 5000); // Limpa o erro após 5 segundos
+      setTimeout(() => setError(null), 5000);
     } finally {
       setDownloading(false);
     }

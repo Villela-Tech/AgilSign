@@ -89,18 +89,18 @@ export const generateTermoRecebimento = async (data: TermoRecebimentoData) => {
     currentY += equipHeight + 10;
   }
 
-  // Data e Local
+  // Data
   currentY += 15;
   const dataAtual = data.data || new Date().toLocaleDateString('pt-BR');
-  doc.text('São Paulo, ' + dataAtual, pageWidth - marginRight - 50, currentY);
+  doc.text(dataAtual, pageWidth - marginRight - 30, currentY);
 
   // Área de assinatura
-  currentY += 30;
+  currentY += 5;
   if (data.assinatura) {
     try {
       // Converter base64 para imagem
       const assinaturaData = data.assinatura.split(',')[1];
-      doc.addImage(assinaturaData, 'PNG', marginLeft, currentY - 15, 70, 30);
+      doc.addImage(assinaturaData, 'PNG', marginLeft, currentY, 70, 25);
     } catch (error) {
       console.warn('Erro ao adicionar assinatura:', error);
     }
@@ -108,14 +108,14 @@ export const generateTermoRecebimento = async (data: TermoRecebimentoData) => {
 
   // Linha para assinatura
   doc.setDrawColor(0);
-  doc.line(marginLeft, currentY + 20, pageWidth / 2 - 10, currentY + 20);
+  doc.line(marginLeft, currentY + 30, pageWidth / 2 - 10, currentY + 30);
   doc.setFontSize(10);
-  doc.text('Assinatura', marginLeft, currentY + 25);
+  doc.text('Assinatura', marginLeft, currentY + 35);
 
   // Rodapé
   doc.setFontSize(8);
   doc.setTextColor(128, 128, 128);
-  doc.text('© AgilSign', pageWidth / 2, pageHeight - 10, { align: 'center' });
+  doc.text('© Desenvolvido por Villela Tech', pageWidth / 2, pageHeight - 10, { align: 'center' });
 
   return doc;
 }; 

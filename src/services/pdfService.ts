@@ -64,7 +64,7 @@ export const generateTermoRecebimento = async (data: TermoRecebimentoData) => {
     const nomeCompleto = `${data.nome || ''} ${data.sobrenome || ''}`.trim();
     doc.text('Nome completo:', marginLeft, currentY);
     doc.setFont('helvetica', 'bold');
-    doc.text(nomeCompleto, marginLeft + 35, currentY);
+    doc.text(nomeCompleto, marginLeft + 25, currentY);
     doc.setFont('helvetica', 'normal');
     currentY += 10;
   }
@@ -73,7 +73,7 @@ export const generateTermoRecebimento = async (data: TermoRecebimentoData) => {
   if (data.email) {
     doc.text('E-mail:', marginLeft, currentY);
     doc.setFont('helvetica', 'bold');
-    doc.text(data.email, marginLeft + 35, currentY);
+    doc.text(data.email, marginLeft + 25, currentY);
     doc.setFont('helvetica', 'normal');
     currentY += 10;
   }
@@ -115,7 +115,7 @@ export const generateTermoRecebimento = async (data: TermoRecebimentoData) => {
 
   // Linha para assinatura
   doc.setDrawColor(0);
-  doc.line(marginLeft, currentY + 10, pageWidth / 2 - 10, currentY + 10);
+  doc.line(marginLeft, currentY + 5, pageWidth / 2 - 10, currentY + 5);
   doc.setFontSize(10);
   doc.text('Assinatura', marginLeft, currentY + 25);
 

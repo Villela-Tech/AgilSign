@@ -105,7 +105,11 @@ export const TermoController = {
   async downloadPDF(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const termo = await Termo.findByPk(id);
+      const termo = await Termo.findOne({
+        where: {
+          id: id
+        }
+      });
       
       if (!termo) {
         return res.status(404).json({ error: 'Termo não encontrado' });

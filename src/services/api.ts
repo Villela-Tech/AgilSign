@@ -99,14 +99,16 @@ export const TermoService = {
   },
 
   downloadPDF: async (id: string): Promise<Blob> => {
-    const response = await api.get(`/termos/${id}/pdf`, {
-      responseType: 'blob',
-      headers: {
-        Accept: 'application/pdf'
-      }
-    });
-    const blobData = response.data as ArrayBuffer;
-    return new Blob([blobData], { type: 'application/pdf' });
+    try {
+      const response = await api.get(`/termos/${id}/pdf`, {
+        responseType: 'arraybuffer'
+      });
+
+      return new Blob([response.data as ArrayBuffer], { type: 'application/pdf' });
+    } catch (error) {
+      console.error('Erro ao baixar PDF:', error);
+      throw error;
+    }
   },
 
   gerarLinkAssinatura: (id: string): string => {
