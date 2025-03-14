@@ -5,8 +5,22 @@ export const API_URL = 'http://localhost:3001/api';
 // URL base do frontend
 export const FRONTEND_URL = 'http://localhost:3000';
 
-const api = axios.create({
+export const api = axios.create({
   baseURL: API_URL
+});
+
+// Interceptor para adicionar o token de autenticação
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  console.log('Token encontrado:', token);
+  if (token && config.headers) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+    console.log('Headers após adicionar token:', config.headers);
+  }
+  return config;
+}, (error) => {
+  console.error('Erro no interceptor:', error);
+  return Promise.reject(error);
 });
 
 export interface TermoData {
@@ -72,6 +86,11 @@ export const TermoService = {
   atualizarStatus: async (id: string, data: AtualizarStatusDTO): Promise<TermoDetalhes> => {
     const response = await api.patch<TermoDetalhes>(`/termos/${id}/status`, data);
     return response.data;
+  },
+
+  // Excluir termo
+  excluir: async (id: string): Promise<void> => {
+    await api.delete(`/termos/${id}`);
   },
 
   // Gerar URL de acesso para assinatura

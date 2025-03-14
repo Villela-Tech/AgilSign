@@ -58,14 +58,13 @@ Termo.init(
       type: DataTypes.STRING,
       allowNull: false,
       defaultValue: function() {
-        // Será substituído pelo controlador
         return '';
       }
     },
     assinatura: {
       type: DataTypes.TEXT,
       allowNull: true,
-    },
+    }
   },
   {
     sequelize,

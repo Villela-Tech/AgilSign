@@ -4,24 +4,24 @@ import { TermoController } from '../controllers/TermoController';
 const router = Router();
 
 // Criar novo termo
-router.post('/termos', TermoController.criar);
+router.post('/', TermoController.criar);
 
 // Buscar termo por ID
-router.get('/termos/:id', TermoController.buscarPorId);
+router.get('/:id', TermoController.buscarPorId);
 
 // Buscar termo por URL de acesso
-router.get('/termos/acesso/:urlAcesso', TermoController.buscarPorUrlAcesso);
+router.get('/acesso/:urlAcesso', TermoController.buscarPorUrlAcesso);
 
 // Listar todos os termos
-router.get('/termos', TermoController.listar);
+router.get('/', TermoController.listar);
 
 // Atualizar status do termo
-router.patch('/termos/:id/status', TermoController.atualizarStatus);
+router.patch('/:id/status', TermoController.atualizarStatus);
 
 // Excluir termo
-router.delete('/termos/:id', TermoController.excluir);
+router.delete('/:id', TermoController.excluir);
 
 // Download do PDF do termo
-router.get('/termos/:id/pdf', TermoController.downloadPDF);
+router.get('/:id/pdf', TermoController.downloadPDF);
 
 export default router; 

@@ -11,10 +11,7 @@ export const TermoController = {
         urlAcesso: `http://localhost:3000/assinar/${req.body.id}`
       });
 
-      return res.status(201).json({
-        id: termo.id,
-        urlAcesso: termo.urlAcesso
-      });
+      return res.status(201).json(termo);
     } catch (error) {
       console.error('Erro ao criar termo:', error);
       return res.status(500).json({ error: 'Erro ao criar termo' });
@@ -25,18 +22,12 @@ export const TermoController = {
   async buscarPorId(req: Request, res: Response) {
     try {
       const termo = await Termo.findByPk(req.params.id);
+      
       if (!termo) {
         return res.status(404).json({ error: 'Termo não encontrado' });
       }
 
-      // Garantir que a URL está correta ao retornar
-      const urlAcesso = `http://localhost:3000/assinar/${termo.id}`;
-      await termo.update({ urlAcesso });
-
-      return res.json({
-        ...termo.toJSON(),
-        urlAcesso
-      });
+      return res.json(termo);
     } catch (error) {
       console.error('Erro ao buscar termo:', error);
       return res.status(500).json({ error: 'Erro ao buscar termo' });
@@ -62,13 +53,10 @@ export const TermoController = {
   // Listar todos os termos
   async listar(req: Request, res: Response) {
     try {
+      console.log('Requisição recebida para listar termos');
       const termos = await Termo.findAll();
-      // Atualizar URLs para todos os termos
-      const termosAtualizados = termos.map(termo => ({
-        ...termo.toJSON(),
-        urlAcesso: `http://localhost:3000/assinar/${termo.id}`
-      }));
-      return res.json(termosAtualizados);
+      console.log('Termos encontrados:', termos.length);
+      return res.json(termos);
     } catch (error) {
       console.error('Erro ao listar termos:', error);
       return res.status(500).json({ error: 'Erro ao listar termos' });
@@ -82,17 +70,13 @@ export const TermoController = {
       const { status, assinatura } = req.body;
 
       const termo = await Termo.findByPk(id);
+
       if (!termo) {
         return res.status(404).json({ error: 'Termo não encontrado' });
       }
 
       await termo.update({ status, assinatura });
-      
-      // Retornar com URL atualizada
-      return res.json({
-        ...termo.toJSON(),
-        urlAcesso: `http://localhost:3000/assinar/${termo.id}`
-      });
+      return res.json(termo);
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
       return res.status(500).json({ error: 'Erro ao atualizar status' });

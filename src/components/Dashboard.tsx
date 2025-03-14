@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { TermoService, TermoDetalhes } from '../services/api';
 import './Dashboard.css';
 
@@ -8,6 +9,14 @@ interface DashboardStats {
   assinados: number;
   recentes: number;
   total: number;
+}
+
+interface MenuItem {
+  icon?: string;
+  text: string;
+  path?: string;
+  isActive?: boolean;
+  type?: 'section';
 }
 
 const Dashboard: React.FC = () => {
@@ -19,6 +28,7 @@ const Dashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'todos' | 'pendente' | 'assinado'>('todos');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   useEffect(() => {
     carregarTermos();
@@ -73,14 +83,46 @@ const Dashboard: React.FC = () => {
   };
 
   const handleCriarNovoTermo = () => {
-    navigate('/');
+    navigate('/termo/novo');
   };
 
   const handleVisualizarTermo = (id: string) => {
-    navigate(`/visualizar/${id}`);
+    navigate(`/termo/${id}`);
   };
 
-  const menuItems = [
+  const handleGerarLink = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    navigate(`/termo/${id}/url`);
+  };
+
+  const handleExcluirTermo = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setConfirmDelete(id);
+  };
+
+  const confirmarExclusao = async () => {
+    if (confirmDelete) {
+      try {
+        await TermoService.excluir(confirmDelete);
+        carregarTermos();
+        setError(null);
+      } catch (err: any) {
+        const mensagem = err.response?.data?.message || 'Erro ao excluir o termo. Por favor, tente novamente.';
+        if (err.response?.status === 403) {
+          setError('Não é possível excluir termos já assinados.');
+        } else if (err.response?.status === 404) {
+          setError('Termo não encontrado.');
+        } else {
+          setError(mensagem);
+        }
+        console.error('Erro ao excluir termo:', err);
+      } finally {
+        setConfirmDelete(null);
+      }
+    }
+  };
+
+  const menuItems: MenuItem[] = [
     {
       icon: '📊',
       text: 'Visão Geral',
@@ -89,16 +131,15 @@ const Dashboard: React.FC = () => {
     },
     {
       icon: '📝',
-      text: 'Termos',
-      path: '/termos',
-      isActive: false,
-      hasArrow: true
+      text: 'Criar Termo',
+      path: '/termo/novo',
+      isActive: location.pathname === '/termo/novo'
     },
     {
       icon: '✍️',
-      text: 'Assinaturas',
-      path: '/assinaturas',
-      isActive: false
+      text: 'Termos Pendentes',
+      path: '/dashboard?status=pendente',
+      isActive: location.pathname === '/dashboard' && filterStatus === 'pendente'
     },
     {
       text: 'Relatórios',
@@ -107,31 +148,8 @@ const Dashboard: React.FC = () => {
     {
       icon: '📈',
       text: 'Estatísticas',
-      path: '/estatisticas',
-      isActive: false
-    },
-    {
-      icon: '📊',
-      text: 'Análises',
-      path: '/analises',
-      isActive: false,
-      hasArrow: true
-    },
-    {
-      text: 'Configurações',
-      type: 'section'
-    },
-    {
-      icon: '❓',
-      text: 'Ajuda & Suporte',
-      path: '/ajuda',
-      isActive: false
-    },
-    {
-      icon: '⚙️',
-      text: 'Configurações',
-      path: '/configuracoes',
-      isActive: false
+      path: '/dashboard?view=stats',
+      isActive: location.pathname === '/dashboard' && location.search.includes('stats')
     }
   ];
 
@@ -145,7 +163,7 @@ const Dashboard: React.FC = () => {
     },
     {
       icon: '✅',
-      color: '#2F80ED',
+      color: '#51C5EA',
       label: 'Termos Assinados',
       value: `${stats.assinados}`,
       percentage: `${((stats.assinados / stats.total) * 100).toFixed(0)}%`
@@ -159,23 +177,44 @@ const Dashboard: React.FC = () => {
     },
     {
       icon: '📊',
-      color: '#2D9CDB',
+      color: '#51C5EA',
       label: 'Total de Termos',
       value: `${stats.total}`,
       percentage: '100%'
-    },
-    {
-      icon: '📈',
-      color: '#27AE60',
-      label: 'Taxa de Conclusão',
-      value: `${((stats.assinados / stats.total) * 100).toFixed(0)}%`,
-      percentage: `${((stats.assinados / stats.total) * 100).toFixed(0)}%`
     }
   ];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 260,
+        damping: 20
+      }
+    }
+  };
+
   if (loading) {
     return (
-      <div className="app-container">
+      <motion.div 
+        className="app-container"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
         <div className="sidebar">
           <div className="sidebar-header">
             <h1 className="sidebar-title">AgilSign</h1>
@@ -190,26 +229,17 @@ const Dashboard: React.FC = () => {
                   {item.text}
                 </div>
               ) : (
-                <a
+                <button
                   key={index}
-                  href={item.path}
+                  onClick={() => item.path && navigate(item.path)}
                   className={`nav-item ${item.isActive ? 'active' : ''}`}
                 >
-                  <span className="nav-icon">{item.icon}</span>
+                  {item.icon && <span className="nav-icon">{item.icon}</span>}
                   <span className="nav-text">{item.text}</span>
-                  {item.hasArrow && <span className="nav-arrow">›</span>}
-                </a>
+                </button>
               )
             ))}
           </nav>
-          <div className="sidebar-footer">
-            <div className="upgrade-card">
-              <div className="upgrade-icon">⚡</div>
-              <p>Desbloqueie recursos premium para sua empresa.</p>
-              <a href="/upgrade" className="upgrade-link">Fazer upgrade →</a>
-            </div>
-            <button className="access-site-btn">Acessar documentação</button>
-          </div>
         </div>
         <div className="main-content">
           <div className="dashboard-loading">
@@ -217,12 +247,17 @@ const Dashboard: React.FC = () => {
             <p>Carregando termos...</p>
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="app-container">
+    <motion.div 
+      className="app-container"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
       <div className="sidebar">
         <div className="sidebar-header">
           <h1 className="sidebar-title">AgilSign</h1>
@@ -237,24 +272,28 @@ const Dashboard: React.FC = () => {
                 {item.text}
               </div>
             ) : (
-              <a
+              <button
                 key={index}
-                href={item.path}
+                onClick={() => item.path && navigate(item.path)}
                 className={`nav-item ${item.isActive ? 'active' : ''}`}
               >
-                <span className="nav-icon">{item.icon}</span>
+                {item.icon && <span className="nav-icon">{item.icon}</span>}
                 <span className="nav-text">{item.text}</span>
-                {item.hasArrow && <span className="nav-arrow">›</span>}
-              </a>
+              </button>
             )
           ))}
         </nav>
       </div>
 
       <div className="main-content">
-        <header className="top-header">
+        <motion.header 
+          className="top-header"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
           <div className="user-welcome">
-            <img src="/avatar-placeholder.png" alt="User" className="user-avatar" />
+            <img src="/images/logo.png" alt="Logo" className="user-avatar" />
             <div className="welcome-text">
               <h2>Bem-vindo ao AgilSign</h2>
               <p>Gerencie seus termos de forma eficiente</p>
@@ -262,119 +301,185 @@ const Dashboard: React.FC = () => {
           </div>
 
           <div className="header-actions">
-            <button onClick={handleCriarNovoTermo} className="novo-termo-button">
-              <span>+</span> Criar Novo Termo
-            </button>
             <div className="search-container">
+              <span className="search-icon">🔍</span>
               <input
                 type="text"
-                placeholder="Buscar termos..."
                 className="global-search"
+                placeholder="Buscar termos..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <span className="search-icon">🔍</span>
             </div>
-            <button className="icon-button" title="Notificações">🔔</button>
-            <button className="icon-button" title="Ajuda">❔</button>
+            <button onClick={handleCriarNovoTermo} className="novo-termo-button">
+              <span>+</span> Criar Novo Termo
+            </button>
           </div>
-        </header>
+        </motion.header>
 
-        <div className="risk-section">
-          <div className="risk-header">
-            <h3>Visão Geral dos Termos</h3>
-            <select className="time-filter">
-              <option value="daily">Hoje</option>
-              <option value="weekly">Esta Semana</option>
-              <option value="monthly">Este Mês</option>
-            </select>
-          </div>
-
-          <div className="risk-metrics">
-            {riskMetrics.map((metric, index) => (
-              <div key={index} className="risk-card">
-                <div className="risk-icon" style={{ backgroundColor: metric.color }}>
-                  {metric.icon}
-                </div>
-                <div className="risk-info">
-                  <span className="risk-value">{metric.value}</span>
-                  <span className="risk-label">{metric.label}</span>
-                  <div className="risk-percentage" style={{ color: metric.color }}>
-                    {metric.percentage}
-                  </div>
-                </div>
+        <motion.div 
+          className="risk-metrics"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {riskMetrics.map((metric, index) => (
+            <motion.div
+              key={index}
+              className="risk-card"
+              variants={itemVariants}
+              whileHover={{ 
+                scale: 1.02,
+                transition: { type: "spring", stiffness: 400, damping: 10 }
+              }}
+            >
+              <div className="risk-icon" style={{ backgroundColor: `${metric.color}20`, color: metric.color }}>
+                {metric.icon}
               </div>
-            ))}
-          </div>
-
-          <div className="termos-section" style={{ marginTop: '20px' }}>
-            <div className="dashboard-header">
-              <h1>Termos Recentes</h1>
-              <div className="dashboard-filters">
-                <div className="status-filter">
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value as 'todos' | 'pendente' | 'assinado')}
-                  >
-                    <option value="todos">Todos os Status</option>
-                    <option value="pendente">Pendentes</option>
-                    <option value="assinado">Assinados</option>
-                  </select>
-                </div>
+              <div className="risk-info">
+                <h3 className="risk-value">{metric.value}</h3>
+                <p className="risk-label">{metric.label}</p>
+                <span className="risk-percentage">{metric.percentage}</span>
               </div>
-            </div>
+            </motion.div>
+          ))}
+        </motion.div>
 
-            {error && (
-              <div className="dashboard-error">
-                <span>⚠️</span>
-                {error}
-              </div>
-            )}
+        <motion.div 
+          className="dashboard-filters"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value as 'todos' | 'pendente' | 'assinado')}
+            className="status-filter"
+          >
+            <option value="todos">Todos os Status</option>
+            <option value="pendente">Pendentes</option>
+            <option value="assinado">Assinados</option>
+          </select>
+        </motion.div>
 
-            <div className="termos-grid">
-              {filteredTermos.length === 0 ? (
-                <div className="no-results">
-                  <p>Nenhum termo encontrado com os filtros atuais.</p>
+        {error ? (
+          <motion.div 
+            className="dashboard-error"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring" }}
+          >
+            <p>{error}</p>
+            <button onClick={carregarTermos}>Tentar novamente</button>
+          </motion.div>
+        ) : filteredTermos.length === 0 ? (
+          <motion.div 
+            className="no-results"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <p>Nenhum termo encontrado</p>
+          </motion.div>
+        ) : (
+          <motion.div 
+            className="termos-grid"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {filteredTermos.map((termo) => (
+              <motion.div
+                key={termo.id}
+                className={`termo-card ${termo.status}`}
+                variants={itemVariants}
+                whileHover={{ 
+                  scale: 1.02,
+                  transition: { type: "spring", stiffness: 400, damping: 10 }
+                }}
+                onClick={() => handleVisualizarTermo(termo.id)}
+              >
+                <div className="termo-header">
+                  <h3>{termo.nome}</h3>
+                  <span className={`status-badge ${termo.status}`}>
+                    {termo.status === 'pendente' ? 'Pendente' : 'Assinado'}
+                  </span>
                 </div>
-              ) : (
-                filteredTermos.slice(0, 6).map(termo => (
-                  <div
-                    key={termo.id}
-                    className={`termo-card ${termo.status}`}
-                    onClick={() => handleVisualizarTermo(termo.id)}
-                  >
-                    <div className="termo-header">
-                      <h3>{termo.nome} {termo.sobrenome}</h3>
-                      <span className={`status-badge ${termo.status}`}>
-                        {termo.status === 'pendente' ? 'Pendente' : 'Assinado'}
-                      </span>
-                    </div>
-
-                    <div className="termo-details">
-                      <p><strong>Email:</strong> {termo.email}</p>
-                      <p><strong>Equipamento:</strong> {termo.equipamento}</p>
-                      <p><strong>Data:</strong> {formatarData(termo.dataCriacao)}</p>
-                    </div>
-
-                    <div className="termo-footer">
-                      <button
-                        className="visualizar-button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleVisualizarTermo(termo.id);
-                        }}
+                <div className="termo-details">
+                  <p><strong>Email:</strong> {termo.email}</p>
+                  <p><strong>Equipamento:</strong> {termo.equipamento}</p>
+                  <p><strong>Data:</strong> {formatarData(termo.dataCriacao)}</p>
+                </div>
+                <div className="termo-footer">
+                  {termo.status === 'pendente' ? (
+                    <div className="termo-actions">
+                      <button 
+                        className="action-button link-button"
+                        onClick={(e) => handleGerarLink(e, termo.id)}
+                        title="Gerar Link"
                       >
-                        Visualizar
+                        🔗
+                      </button>
+                      <button 
+                        className="action-button delete-button"
+                        onClick={(e) => handleExcluirTermo(e, termo.id)}
+                        title="Excluir Termo"
+                      >
+                        🗑️
+                      </button>
+                      <button className="visualizar-button">
+                        Visualizar Termo
                       </button>
                     </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
+                  ) : (
+                    <button className="visualizar-button">
+                      Visualizar Termo
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
       </div>
-    </div>
+
+      <AnimatePresence>
+        {confirmDelete && (
+          <motion.div 
+            className="confirm-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div 
+              className="confirm-content"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            >
+              <h3 className="confirm-title">Excluir Termo</h3>
+              <p className="confirm-message">
+                Tem certeza que deseja excluir este termo? Esta ação não pode ser desfeita.
+              </p>
+              <div className="confirm-actions">
+                <button 
+                  className="confirm-button cancel"
+                  onClick={() => setConfirmDelete(null)}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  className="confirm-button ok"
+                  onClick={confirmarExclusao}
+                >
+                  Excluir
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };
 
