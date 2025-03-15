@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TermoService, TermoDetalhes } from '../services/api';
+import TermoCompromisso from './TermoCompromisso';
+import UrlModal from './UrlModal';
+import UrlGerada from './UrlGerada';
 import './Dashboard.css';
 
 interface DashboardStats {
@@ -17,6 +20,7 @@ interface MenuItem {
   path?: string;
   isActive?: boolean;
   type?: 'section';
+  onClick?: () => void;
 }
 
 const Dashboard: React.FC = () => {
@@ -29,6 +33,14 @@ const Dashboard: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<'todos' | 'pendente' | 'assinado'>('todos');
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [selectedTermo, setSelectedTermo] = useState<TermoDetalhes | null>(null);
+  const [showUrlModal, setShowUrlModal] = useState(false);
+  const [selectedTermoId, setSelectedTermoId] = useState<string | null>(null);
+  const [activeMenu, setActiveMenu] = useState<string>('visaoGeral');
+  const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
+  const [showUrlGerada, setShowUrlGerada] = useState(false);
+  const [urlGerada, setUrlGerada] = useState('');
 
   useEffect(() => {
     carregarTermos();
@@ -92,7 +104,8 @@ const Dashboard: React.FC = () => {
 
   const handleGerarLink = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    navigate(`/termo/${id}/url`);
+    setSelectedTermoId(id);
+    setShowUrlModal(true);
   };
 
   const handleExcluirTermo = async (e: React.MouseEvent, id: string) => {
@@ -122,24 +135,48 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleMenuClick = (menuId: string) => {
+    setActiveMenu(menuId);
+
+    if (menuId === 'criarTermo') {
+      setShowForm(true);
+      setGeneratedUrl(null); // Reset generated URL when opening form
+    } else {
+      setShowForm(false);
+      if (menuId === 'visaoGeral') {
+        setFilterStatus('todos');
+      } else if (menuId === 'termosPendentes') {
+        setFilterStatus('pendente');
+      }
+    }
+  };
+
+  const handleUrlGenerated = (url: string, id: string) => {
+    setGeneratedUrl(url);
+    setSelectedTermoId(id);
+    setShowForm(false);
+    setShowUrlGerada(true);
+    setUrlGerada(url);
+  };
+
   const menuItems: MenuItem[] = [
     {
       icon: '📊',
       text: 'Visão Geral',
-      path: '/dashboard',
-      isActive: location.pathname === '/dashboard'
+      isActive: activeMenu === 'visaoGeral',
+      onClick: () => handleMenuClick('visaoGeral')
     },
     {
       icon: '📝',
       text: 'Criar Termo',
-      path: '/termo/novo',
-      isActive: location.pathname === '/termo/novo'
+      isActive: activeMenu === 'criarTermo',
+      onClick: () => handleMenuClick('criarTermo')
     },
     {
       icon: '✍️',
       text: 'Termos Pendentes',
-      path: '/dashboard?status=pendente',
-      isActive: location.pathname === '/dashboard' && filterStatus === 'pendente'
+      isActive: activeMenu === 'termosPendentes',
+      onClick: () => handleMenuClick('termosPendentes')
     },
     {
       text: 'Relatórios',
@@ -148,8 +185,8 @@ const Dashboard: React.FC = () => {
     {
       icon: '📈',
       text: 'Estatísticas',
-      path: '/dashboard?view=stats',
-      isActive: location.pathname === '/dashboard' && location.search.includes('stats')
+      isActive: activeMenu === 'estatisticas',
+      onClick: () => handleMenuClick('estatisticas')
     }
   ];
 
@@ -209,7 +246,7 @@ const Dashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <motion.div 
+      <motion.div
         className="app-container"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -231,7 +268,7 @@ const Dashboard: React.FC = () => {
               ) : (
                 <button
                   key={index}
-                  onClick={() => item.path && navigate(item.path)}
+                  onClick={() => item.onClick ? item.onClick() : item.path && navigate(item.path)}
                   className={`nav-item ${item.isActive ? 'active' : ''}`}
                 >
                   {item.icon && <span className="nav-icon">{item.icon}</span>}
@@ -252,12 +289,7 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <motion.div 
-      className="app-container"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
+    <motion.div className="app-container" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <div className="sidebar">
         <div className="sidebar-header">
           <h1 className="sidebar-title">AgilSign</h1>
@@ -274,7 +306,7 @@ const Dashboard: React.FC = () => {
             ) : (
               <button
                 key={index}
-                onClick={() => item.path && navigate(item.path)}
+                onClick={() => item.onClick && item.onClick()}
                 className={`nav-item ${item.isActive ? 'active' : ''}`}
               >
                 {item.icon && <span className="nav-icon">{item.icon}</span>}
@@ -286,171 +318,200 @@ const Dashboard: React.FC = () => {
       </div>
 
       <div className="main-content">
-        <motion.header 
-          className="top-header"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <div className="user-welcome">
-            <img src="/images/logo.png" alt="Logo" className="user-avatar" />
-            <div className="welcome-text">
-              <h2>Bem-vindo ao AgilSign</h2>
-              <p>Gerencie seus termos de forma eficiente</p>
-            </div>
+        {showForm ? (
+          <div className="form-section">
+            <TermoCompromisso
+              onComplete={() => setShowForm(false)}
+              onUrlGenerated={handleUrlGenerated}
+            />
           </div>
-
-          <div className="header-actions">
-            <div className="search-container">
-              <span className="search-icon">🔍</span>
+        ) : generatedUrl ? (
+          <div className="url-result-container">
+            <h2>URL Gerada com Sucesso</h2>
+            <div className="url-result">
               <input
                 type="text"
-                className="global-search"
-                placeholder="Buscar termos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={generatedUrl}
+                readOnly
+                className="url-input"
               />
+              <button
+                className="copy-button"
+                onClick={() => {
+                  navigator.clipboard.writeText(generatedUrl);
+                  // You could add a toast notification here
+                }}
+              >
+                Copiar URL
+              </button>
             </div>
-            <button onClick={handleCriarNovoTermo} className="novo-termo-button">
-              <span>+</span> Criar Novo Termo
+            <button
+              className="back-button"
+              onClick={() => setGeneratedUrl(null)}
+            >
+              Voltar ao Dashboard
             </button>
           </div>
-        </motion.header>
-
-        <motion.div 
-          className="risk-metrics"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {riskMetrics.map((metric, index) => (
-            <motion.div
-              key={index}
-              className="risk-card"
-              variants={itemVariants}
-              whileHover={{ 
-                scale: 1.02,
-                transition: { type: "spring", stiffness: 400, damping: 10 }
-              }}
-            >
-              <div className="risk-icon" style={{ backgroundColor: `${metric.color}20`, color: metric.color }}>
-                {metric.icon}
-              </div>
-              <div className="risk-info">
-                <h3 className="risk-value">{metric.value}</h3>
-                <p className="risk-label">{metric.label}</p>
-                <span className="risk-percentage">{metric.percentage}</span>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        <motion.div 
-          className="dashboard-filters"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as 'todos' | 'pendente' | 'assinado')}
-            className="status-filter"
-          >
-            <option value="todos">Todos os Status</option>
-            <option value="pendente">Pendentes</option>
-            <option value="assinado">Assinados</option>
-          </select>
-        </motion.div>
-
-        {error ? (
-          <motion.div 
-            className="dashboard-error"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: "spring" }}
-          >
-            <p>{error}</p>
-            <button onClick={carregarTermos}>Tentar novamente</button>
-          </motion.div>
-        ) : filteredTermos.length === 0 ? (
-          <motion.div 
-            className="no-results"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            <p>Nenhum termo encontrado</p>
-          </motion.div>
         ) : (
-          <motion.div 
-            className="termos-grid"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            {filteredTermos.map((termo) => (
+          <>
+            <div className="top-header">
+              <div className="user-welcome">
+                <div className="welcome-text">
+                  <h2>Olá, Bem-vindo!</h2>
+                  <p>Gerencie seus termos de responsabilidade</p>
+                </div>
+              </div>
+              <div className="header-actions">
+                <div className="search-container">
+                  <i className="search-icon">🔍</i>
+                  <input
+                    type="text"
+                    className="global-search"
+                    placeholder="Buscar termos..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="filters-header">
+              <div className="dashboard-filters">
+                <div className="search-container">
+                  <span className="search-icon">🔍</span>
+                  <input
+                    type="text"
+                    className="global-search"
+                    placeholder="Buscar termos..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value as 'todos' | 'pendente' | 'assinado')}
+                  className="status-filter"
+                >
+                  <option value="todos">Todos os Status</option>
+                  <option value="pendente">Pendentes</option>
+                  <option value="assinado">Assinados</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="risk-metrics">
+              {riskMetrics.map((metric, index) => (
+                <motion.div
+                  key={index}
+                  className="risk-card"
+                  variants={itemVariants}
+                  whileHover={{
+                    scale: 1.02,
+                    transition: { type: "spring", stiffness: 400, damping: 10 }
+                  }}
+                >
+                  <div className="risk-icon" style={{ backgroundColor: `${metric.color}20`, color: metric.color }}>
+                    {metric.icon}
+                  </div>
+                  <div className="risk-info">
+                    <h3 className="risk-value">{metric.value}</h3>
+                    <p className="risk-label">{metric.label}</p>
+                    <span className="risk-percentage">{metric.percentage}</span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {error ? (
               <motion.div
-                key={termo.id}
-                className={`termo-card ${termo.status}`}
-                variants={itemVariants}
-                whileHover={{ 
-                  scale: 1.02,
-                  transition: { type: "spring", stiffness: 400, damping: 10 }
-                }}
-                onClick={() => handleVisualizarTermo(termo.id)}
+                className="dashboard-error"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: "spring" }}
               >
-                <div className="termo-header">
-                  <h3>{termo.nome}</h3>
-                  <span className={`status-badge ${termo.status}`}>
-                    {termo.status === 'pendente' ? 'Pendente' : 'Assinado'}
-                  </span>
-                </div>
-                <div className="termo-details">
-                  <p><strong>Email:</strong> {termo.email}</p>
-                  <p><strong>Equipamento:</strong> {termo.equipamento}</p>
-                  <p><strong>Data:</strong> {formatarData(termo.dataCriacao)}</p>
-                </div>
-                <div className="termo-footer">
-                  {termo.status === 'pendente' ? (
-                    <div className="termo-actions">
-                      <button 
-                        className="action-button link-button"
-                        onClick={(e) => handleGerarLink(e, termo.id)}
-                        title="Gerar Link"
-                      >
-                        🔗
-                      </button>
-                      <button 
-                        className="action-button delete-button"
-                        onClick={(e) => handleExcluirTermo(e, termo.id)}
-                        title="Excluir Termo"
-                      >
-                        🗑️
-                      </button>
-                      <button className="visualizar-button">
-                        Visualizar Termo
-                      </button>
-                    </div>
-                  ) : (
-                    <button className="visualizar-button">
-                      Visualizar Termo
-                    </button>
-                  )}
-                </div>
+                <p>{error}</p>
+                <button onClick={carregarTermos}>Tentar novamente</button>
               </motion.div>
-            ))}
-          </motion.div>
+            ) : filteredTermos.length === 0 ? (
+              <motion.div
+                className="no-results"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <p>Nenhum termo encontrado</p>
+              </motion.div>
+            ) : (
+              <motion.div
+                className="termos-grid"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+              >
+                {filteredTermos.map((termo) => (
+                  <motion.div
+                    key={termo.id}
+                    className={`termo-card ${termo.status}`}
+                    variants={itemVariants}
+                    whileHover={{
+                      scale: 1.02,
+                      transition: { type: "spring", stiffness: 400, damping: 10 }
+                    }}
+                    onClick={() => handleVisualizarTermo(termo.id)}
+                  >
+                    <div className="termo-header">
+                      <h3>{termo.nome}</h3>
+                      <span className={`status-badge ${termo.status}`}>
+                        {termo.status === 'pendente' ? 'Pendente' : 'Assinado'}
+                      </span>
+                    </div>
+                    <div className="termo-details">
+                      <p><strong>Equipamento:</strong> {termo.equipamento}</p>
+                      <p><strong>Data:</strong> {formatarData(termo.dataCriacao)}</p>
+                    </div>
+                    <div className="termo-footer">
+                      {termo.status === 'pendente' ? (
+                        <div className="termo-actions">
+                          <button
+                            className="action-button link-button"
+                            onClick={(e) => handleGerarLink(e, termo.id)}
+                            title="Gerar Link"
+                          >
+                            🔗
+                          </button>
+                          <button
+                            className="action-button delete-button"
+                            onClick={(e) => handleExcluirTermo(e, termo.id)}
+                            title="Excluir Termo"
+                          >
+                            🗑️
+                          </button>
+                          <button className="visualizar-button">
+                            Visualizar Termo
+                          </button>
+                        </div>
+                      ) : (
+                        <button className="visualizar-button">
+                          Visualizar Termo
+                        </button>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </>
         )}
       </div>
 
       <AnimatePresence>
         {confirmDelete && (
-          <motion.div 
+          <motion.div
             className="confirm-modal"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <motion.div 
+            <motion.div
               className="confirm-content"
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
@@ -462,13 +523,13 @@ const Dashboard: React.FC = () => {
                 Tem certeza que deseja excluir este termo? Esta ação não pode ser desfeita.
               </p>
               <div className="confirm-actions">
-                <button 
+                <button
                   className="confirm-button cancel"
                   onClick={() => setConfirmDelete(null)}
                 >
                   Cancelar
                 </button>
-                <button 
+                <button
                   className="confirm-button ok"
                   onClick={confirmarExclusao}
                 >
@@ -477,6 +538,21 @@ const Dashboard: React.FC = () => {
               </div>
             </motion.div>
           </motion.div>
+        )}
+        {showUrlModal && selectedTermoId && (
+          <UrlModal
+            termoId={selectedTermoId}
+            onClose={() => {
+              setShowUrlModal(false);
+              setSelectedTermoId(null);
+            }}
+          />
+        )}
+        {showUrlGerada && (
+          <UrlGerada
+            url={urlGerada}
+            onClose={() => setShowUrlGerada(false)}
+          />
         )}
       </AnimatePresence>
     </motion.div>
