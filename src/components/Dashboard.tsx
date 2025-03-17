@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TermoService, TermoDetalhes } from '../services/api';
 import TermoCompromisso from './TermoCompromisso';
 import UrlModal from './UrlModal';
-import UrlGerada from './UrlGerada';
 import './Dashboard.css';
 
 interface DashboardStats {
@@ -38,9 +37,6 @@ const Dashboard: React.FC = () => {
   const [showUrlModal, setShowUrlModal] = useState(false);
   const [selectedTermoId, setSelectedTermoId] = useState<string | null>(null);
   const [activeMenu, setActiveMenu] = useState<string>('visaoGeral');
-  const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
-  const [showUrlGerada, setShowUrlGerada] = useState(false);
-  const [urlGerada, setUrlGerada] = useState('');
 
   useEffect(() => {
     carregarTermos();
@@ -140,7 +136,6 @@ const Dashboard: React.FC = () => {
 
     if (menuId === 'criarTermo') {
       setShowForm(true);
-      setGeneratedUrl(null); // Reset generated URL when opening form
     } else {
       setShowForm(false);
       if (menuId === 'visaoGeral') {
@@ -152,11 +147,9 @@ const Dashboard: React.FC = () => {
   };
 
   const handleUrlGenerated = (url: string, id: string) => {
-    setGeneratedUrl(url);
     setSelectedTermoId(id);
+    setShowUrlModal(true);
     setShowForm(false);
-    setShowUrlGerada(true);
-    setUrlGerada(url);
   };
 
   const menuItems: MenuItem[] = [
@@ -324,33 +317,6 @@ const Dashboard: React.FC = () => {
               onComplete={() => setShowForm(false)}
               onUrlGenerated={handleUrlGenerated}
             />
-          </div>
-        ) : generatedUrl ? (
-          <div className="url-result-container">
-            <h2>URL Gerada com Sucesso</h2>
-            <div className="url-result">
-              <input
-                type="text"
-                value={generatedUrl}
-                readOnly
-                className="url-input"
-              />
-              <button
-                className="copy-button"
-                onClick={() => {
-                  navigator.clipboard.writeText(generatedUrl);
-                  // You could add a toast notification here
-                }}
-              >
-                Copiar URL
-              </button>
-            </div>
-            <button
-              className="back-button"
-              onClick={() => setGeneratedUrl(null)}
-            >
-              Voltar ao Dashboard
-            </button>
           </div>
         ) : (
           <>
@@ -546,12 +512,6 @@ const Dashboard: React.FC = () => {
               setShowUrlModal(false);
               setSelectedTermoId(null);
             }}
-          />
-        )}
-        {showUrlGerada && (
-          <UrlGerada
-            url={urlGerada}
-            onClose={() => setShowUrlGerada(false)}
           />
         )}
       </AnimatePresence>
