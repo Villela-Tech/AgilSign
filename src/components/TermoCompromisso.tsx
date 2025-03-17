@@ -16,14 +16,19 @@ interface FormData {
 const initialFormData: FormData = {
   nome: '',
   sobrenome: '',
-  email: '',
+  email: 'no-email@example.com',
   equipamento: '',
   equipe: '',
   numeroSerie: '',
   data: ''
 };
 
-const TermoCompromisso: React.FC = () => {
+interface Props {
+  onComplete?: () => void;
+  onUrlGenerated?: (url: string, id: string) => void;
+}
+
+const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>(initialFormData);
@@ -35,7 +40,16 @@ const TermoCompromisso: React.FC = () => {
       ...prev,
       [name]: value
     }));
-    setError(null); // Limpa erro quando usuário começa a digitar
+    setError(null);
+  };
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setError(null);
   };
 
   const validateForm = (): boolean => {
@@ -45,10 +59,6 @@ const TermoCompromisso: React.FC = () => {
     }
     if (!formData.sobrenome.trim()) {
       setError('Sobrenome é obrigatório');
-      return false;
-    }
-    if (!formData.email.trim() || !formData.email.includes('@')) {
-      setError('Email inválido');
       return false;
     }
     if (!formData.equipamento.trim()) {
@@ -73,24 +83,29 @@ const TermoCompromisso: React.FC = () => {
     setError(null);
 
     try {
-      // Prepara os dados conforme a interface TermoData
       const termoData = {
         nome: formData.nome.trim(),
         sobrenome: formData.sobrenome.trim(),
-        email: formData.email.trim(),
+        email: formData.email,
         equipamento: `${formData.equipamento.trim()} (S/N: ${formData.numeroSerie.trim()})`,
         equipe: formData.equipe.trim(),
         data: formData.data
       };
 
-      console.log('Enviando dados:', termoData); // Log para debug
-
       const response = await TermoService.criar(termoData);
 
-      console.log('Resposta do servidor:', response); // Log para debug
-
       if (response && response.id) {
-        navigate(`/termo/${response.id}/url`);
+        const url = TermoService.gerarLinkAssinatura(response.id);
+        
+        if (onUrlGenerated) {
+          onUrlGenerated(url, response.id);
+        } else {
+          window.location.href = url;
+        }
+        
+        if (onComplete) {
+          onComplete();
+        }
       } else {
         throw new Error('Resposta inválida do servidor');
       }
@@ -104,10 +119,8 @@ const TermoCompromisso: React.FC = () => {
 
   return (
     <div className="termo-container">
-      <img src="/images/logo.png" alt="Logo" className="logo" style={{ width: '100px', height: '100px' }} />
-
       <div className="termo-form">
-        <h2 className="termo-title">Termo de Compromisso</h2>
+        <h2 className="termo-title">DADOS PESSOAIS</h2>
 
         {error && (
           <div className="error-message">
@@ -127,6 +140,7 @@ const TermoCompromisso: React.FC = () => {
                 onChange={handleChange}
                 required
                 disabled={loading}
+                placeholder="Digite seu nome"
               />
             </div>
             <div className="form-group">
@@ -139,22 +153,12 @@ const TermoCompromisso: React.FC = () => {
                 onChange={handleChange}
                 required
                 disabled={loading}
+                placeholder="Digite seu sobrenome"
               />
             </div>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              disabled={loading}
-            />
-          </div>
+          <h2 className="termo-title">DADOS DO EQUIPAMENTO</h2>
 
           <div className="form-group">
             <label htmlFor="equipamento">Equipamento</label>
@@ -166,33 +170,37 @@ const TermoCompromisso: React.FC = () => {
               onChange={handleChange}
               required
               disabled={loading}
+              placeholder="Ex: Headset"
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="equipe">Equipe</label>
-            <input
-              type="text"
-              id="equipe"
-              name="equipe"
-              value={formData.equipe}
-              onChange={handleChange}
-              disabled={loading}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="numeroSerie">Nº Série</label>
-            <input
-              type="text"
-              id="numeroSerie"
-              name="numeroSerie"
-              value={formData.numeroSerie}
-              onChange={handleChange}
-              required
-              disabled={loading}
-            />
-          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="numeroSerie">Número de Série</label>
+              <input
+                type="text"
+                id="numeroSerie"
+                name="numeroSerie"
+                value={formData.numeroSerie}
+                onChange={handleChange}
+                required
+                disabled={loading}
+                placeholder="Ex: ABC123XYZ"
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="equipe">Equipe</label>
+              <input
+                type="text"
+                id="equipe"
+                name="equipe"
+                value={formData.equipe}
+                onChange={handleChange}
+                disabled={loading}
+                placeholder="Ex: Desenvolvimento"
+              />
+            </div>
+          </div>   
 
           <div className="form-group">
             <label htmlFor="data">Data</label>
@@ -201,9 +209,10 @@ const TermoCompromisso: React.FC = () => {
               id="data"
               name="data"
               value={formData.data}
-              onChange={handleChange}
+              onChange={handleDateChange}
               required
               disabled={loading}
+              min={new Date().toISOString().split('T')[0]}
             />
           </div>
 
@@ -212,12 +221,10 @@ const TermoCompromisso: React.FC = () => {
             className="submit-button"
             disabled={loading}
           >
-            {loading ? 'Gerando URL...' : 'Gerar URL'}
+            {loading ? 'Processando...' : 'Gerar URL'}
           </button>
         </form>
       </div>
-
-      <p className="copyright">© Desenvolvido por Villela Tech </p>
     </div>
   );
 };
