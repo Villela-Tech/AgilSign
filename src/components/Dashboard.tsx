@@ -320,27 +320,7 @@ const Dashboard: React.FC = () => {
           </div>
         ) : (
           <>
-            <div className="top-header">
-              <div className="user-welcome">
-                <div className="welcome-text">
-                  <h2>Olá, Bem-vindo!</h2>
-                  <p>Gerencie seus termos de responsabilidade</p>
-                </div>
-              </div>
-              <div className="header-actions">
-                <div className="search-container">
-                  <i className="search-icon">🔍</i>
-                  <input
-                    type="text"
-                    className="global-search"
-                    placeholder="Buscar termos..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-
+            
             <div className="filters-header">
               <div className="dashboard-filters">
                 <div className="search-container">
