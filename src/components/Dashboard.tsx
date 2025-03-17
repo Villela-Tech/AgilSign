@@ -37,6 +37,9 @@ const Dashboard: React.FC = () => {
   const [showUrlModal, setShowUrlModal] = useState(false);
   const [selectedTermoId, setSelectedTermoId] = useState<string | null>(null);
   const [activeMenu, setActiveMenu] = useState<string>('visaoGeral');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4; // 4 itens por linha, 2 linhas
+  const maxPagesToShow = 5;
 
   useEffect(() => {
     carregarTermos();
@@ -79,6 +82,24 @@ const Dashboard: React.FC = () => {
 
     return matchesSearch && matchesStatus;
   });
+  
+  // Cálculo para paginação
+  const indexOfLastTermo = currentPage * itemsPerPage;
+  const indexOfFirstTermo = indexOfLastTermo - itemsPerPage;
+  const currentTermos = filteredTermos.slice(indexOfFirstTermo, indexOfLastTermo);
+  const totalPages = Math.ceil(filteredTermos.length / itemsPerPage);
+
+  // Se a página atual é maior que o total de páginas e existem itens, ajustar para a última página
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [filteredTermos, totalPages, currentPage]);
+
+  const paginate = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo(0, 0);
+  };
 
   const formatarData = (data: string) => {
     return new Date(data).toLocaleDateString('pt-BR', {
@@ -387,63 +408,130 @@ const Dashboard: React.FC = () => {
                 <p>Nenhum termo encontrado</p>
               </motion.div>
             ) : (
-              <motion.div
-                className="termos-grid"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-              >
-                {filteredTermos.map((termo) => (
-                  <motion.div
-                    key={termo.id}
-                    className={`termo-card ${termo.status}`}
-                    variants={itemVariants}
-                    whileHover={{
-                      scale: 1.02,
-                      transition: { type: "spring", stiffness: 400, damping: 10 }
-                    }}
-                    onClick={() => handleVisualizarTermo(termo.id)}
-                  >
-                    <div className="termo-header">
-                      <h3>{termo.nome}</h3>
-                      <span className={`status-badge ${termo.status}`}>
-                        {termo.status === 'pendente' ? 'Pendente' : 'Assinado'}
-                      </span>
-                    </div>
-                    <div className="termo-details">
-                      <p><strong>Equipamento:</strong> {termo.equipamento}</p>
-                      <p><strong>Data:</strong> {formatarData(termo.dataCriacao)}</p>
-                    </div>
-                    <div className="termo-footer">
-                      {termo.status === 'pendente' ? (
-                        <div className="termo-actions">
-                          <button
-                            className="action-button link-button"
-                            onClick={(e) => handleGerarLink(e, termo.id)}
-                            title="Gerar Link"
+              <>
+                <motion.div
+                  className="termos-grid"
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  {currentTermos.map((termo) => (
+                    <motion.div
+                      key={termo.id}
+                      className={`termo-card ${termo.status}`}
+                      variants={itemVariants}
+                      whileHover={{
+                        scale: 1.02,
+                        transition: { type: "spring", stiffness: 400, damping: 10 }
+                      }}
+                      onClick={() => handleVisualizarTermo(termo.id)}
+                    >
+                      <div className="termo-header">
+                        <h3>{termo.nome}</h3>
+                        <span className={`status-badge ${termo.status}`}>
+                          {termo.status === 'pendente' ? 'Pendente' : 'Assinado'}
+                        </span>
+                      </div>
+                      <div className="termo-details">
+                        <p>
+                          <strong>Equipamento:</strong> {termo.equipamento}
+                        </p>
+                        <p>
+                          <strong>Data:</strong> {formatarData(termo.dataCriacao)}
+                        </p>
+                      </div>
+                      <div className="termo-footer">
+                        {termo.status === 'pendente' ? (
+                          <>
+                            <div className="termo-actions">
+                              <button
+                                className="action-button link-button"
+                                onClick={(e) => handleGerarLink(e, termo.id)}
+                                title="Gerar Link"
+                              >
+                                🔗
+                              </button>
+                              <button
+                                className="action-button delete-button"
+                                onClick={(e) => handleExcluirTermo(e, termo.id)}
+                                title="Excluir Termo"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                            <button className="visualizar-button">
+                              Visualizar
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <div className="termo-actions"></div>
+                            <button className="visualizar-button">
+                              Visualizar
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+                
+                {filteredTermos.length > 0 && (
+                  <div className="pagination">
+                    <button 
+                      onClick={() => paginate(currentPage - 1)} 
+                      disabled={currentPage === 1}
+                      className="page-button"
+                    >
+                      &laquo;
+                    </button>
+                    
+                    {(() => {
+                      let startPage: number = 1;
+                      let endPage: number = 1;
+                      if (totalPages <= maxPagesToShow) {
+                        startPage = 1;
+                        endPage = totalPages;
+                      } else {
+                        const maxPagesBeforeCurrentPage = Math.floor(maxPagesToShow / 2);
+                        const maxPagesAfterCurrentPage = Math.ceil(maxPagesToShow / 2) - 1;
+                        
+                        if (currentPage <= maxPagesBeforeCurrentPage) {
+                          startPage = 1;
+                          endPage = maxPagesToShow;
+                        } else if (currentPage + maxPagesAfterCurrentPage >= totalPages) {
+                          startPage = totalPages - maxPagesToShow + 1;
+                          endPage = totalPages;
+                        } else {
+                          startPage = currentPage - maxPagesBeforeCurrentPage;
+                          endPage = currentPage + maxPagesAfterCurrentPage;
+                        }
+                      }
+                      
+                      return Array.from({ length: endPage - startPage + 1 }, (_, i) => {
+                        const pageNumber = startPage + i;
+                        return (
+                          <button 
+                            key={pageNumber} 
+                            onClick={() => paginate(pageNumber)}
+                            className={`page-button ${currentPage === pageNumber ? 'active' : ''}`}
                           >
-                            🔗
+                            {pageNumber}
                           </button>
-                          <button
-                            className="action-button delete-button"
-                            onClick={(e) => handleExcluirTermo(e, termo.id)}
-                            title="Excluir Termo"
-                          >
-                            🗑️
-                          </button>
-                          <button className="visualizar-button">
-                            Visualizar Termo
-                          </button>
-                        </div>
-                      ) : (
-                        <button className="visualizar-button">
-                          Visualizar Termo
-                        </button>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
+                        );
+                      });
+                    })()}
+                    
+                    <button 
+                      onClick={() => paginate(currentPage + 1)} 
+                      disabled={currentPage === totalPages}
+                      className="page-button"
+                    >
+                      &raquo;
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
