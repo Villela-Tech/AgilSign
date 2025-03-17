@@ -31,7 +31,7 @@ const UrlModal: React.FC<UrlModalProps> = ({ termoId, onClose }) => {
 
         <div className="modal-body">
           <p className="modal-description">
-            O link para assinatura do termo foi gerado com sucesso. Compartilhe este link com o usuário para que ele possa assinar o documento digitalmente.
+          Compartilhe este link com o usuário para que ele possa assinar o documento digitalmente.
           </p>
           
           <div className="url-box">
@@ -45,15 +45,13 @@ const UrlModal: React.FC<UrlModalProps> = ({ termoId, onClose }) => {
               onClick={handleCopyUrl}
               className={`copy-button ${copied ? 'copied' : ''}`}
             >
-              {copied ? 'Copiado!' : 'Copiar'}
+              {copied ? 'Copiado ✅ ' : 'Copiar'}
             </button>
           </div>
         </div>
 
         <div className="modal-footer">
-          <button onClick={onClose} className="close-button-primary">
-            Concluir
-          </button>
+      
         </div>
       </div>
     </div>
