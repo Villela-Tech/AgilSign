@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // URL base da API
-export const API_URL = 'http://localhost:3001/api';
+export const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 // URL base do frontend
 export const FRONTEND_URL = 'http://localhost:3000';
 

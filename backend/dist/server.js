@@ -18,6 +18,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const database_1 = __importDefault(require("./config/database"));
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const termo_routes_1 = __importDefault(require("./routes/termo.routes"));
+const user_model_1 = __importDefault(require("./models/user.model"));
 const auth_middleware_1 = require("./middleware/auth.middleware");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
@@ -28,13 +29,35 @@ app.use(express_1.default.json());
 // Rotas
 app.use('/api/auth', auth_routes_1.default);
 app.use('/api/termos', auth_middleware_1.authMiddleware, termo_routes_1.default);
+function createAdminUser() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const adminUser = yield user_model_1.default.findOne({ where: { email: 'admin@agilsign.com' } });
+            if (!adminUser) {
+                yield user_model_1.default.create({
+                    name: 'Admin',
+                    email: 'admin@agilsign.com',
+                    password: '123456',
+                    role: 'admin'
+                });
+                console.log('Usuário admin criado com sucesso');
+            }
+        }
+        catch (error) {
+            console.error('Erro ao criar usuário admin:', error);
+        }
+    });
+}
 function initializeDatabase() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             yield database_1.default.authenticate();
             console.log('Conexão com o SQLite estabelecida com sucesso.');
-            yield database_1.default.sync();
-            console.log('Modelos sincronizados com o banco de dados.');
+            // Força a recriação das tabelas
+            yield database_1.default.sync({ force: true });
+            console.log('Modelos sincronizados com o banco de dados (tabelas recriadas).');
+            // Criar usuário admin
+            yield createAdminUser();
             app.listen(PORT, () => {
                 console.log(`Servidor rodando na porta ${PORT}`);
             });

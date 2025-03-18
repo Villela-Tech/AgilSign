@@ -20,12 +20,8 @@ exports.TermoController = {
     criar(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const userId = req.userId;
-                const termo = yield Termo_1.default.create(Object.assign(Object.assign({}, req.body), { userId, urlAcesso: `http://localhost:3000/assinar/${req.body.id}` }));
-                return res.status(201).json({
-                    id: termo.id,
-                    urlAcesso: termo.urlAcesso
-                });
+                const termo = yield Termo_1.default.create(Object.assign(Object.assign({}, req.body), { urlAcesso: `http://localhost:3000/assinar/${req.body.id}` }));
+                return res.status(201).json(termo);
             }
             catch (error) {
                 console.error('Erro ao criar termo:', error);
@@ -37,18 +33,11 @@ exports.TermoController = {
     buscarPorId(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const termo = yield Termo_1.default.findOne({
-                    where: {
-                        id: req.params.id,
-                        userId: req.userId
-                    }
-                });
+                const termo = yield Termo_1.default.findByPk(req.params.id);
                 if (!termo) {
                     return res.status(404).json({ error: 'Termo não encontrado' });
                 }
-                const urlAcesso = `http://localhost:3000/assinar/${termo.id}`;
-                yield termo.update({ urlAcesso });
-                return res.json(Object.assign(Object.assign({}, termo.toJSON()), { urlAcesso }));
+                return res.json(termo);
             }
             catch (error) {
                 console.error('Erro ao buscar termo:', error);
@@ -78,11 +67,10 @@ exports.TermoController = {
     listar(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const termos = yield Termo_1.default.findAll({
-                    where: { userId: req.userId }
-                });
-                const termosAtualizados = termos.map(termo => (Object.assign(Object.assign({}, termo.toJSON()), { urlAcesso: `http://localhost:3000/assinar/${termo.id}` })));
-                return res.json(termosAtualizados);
+                console.log('Requisição recebida para listar termos');
+                const termos = yield Termo_1.default.findAll();
+                console.log('Termos encontrados:', termos.length);
+                return res.json(termos);
             }
             catch (error) {
                 console.error('Erro ao listar termos:', error);
@@ -96,17 +84,12 @@ exports.TermoController = {
             try {
                 const { id } = req.params;
                 const { status, assinatura } = req.body;
-                const termo = yield Termo_1.default.findOne({
-                    where: {
-                        id,
-                        userId: req.userId
-                    }
-                });
+                const termo = yield Termo_1.default.findByPk(id);
                 if (!termo) {
                     return res.status(404).json({ error: 'Termo não encontrado' });
                 }
                 yield termo.update({ status, assinatura });
-                return res.json(Object.assign(Object.assign({}, termo.toJSON()), { urlAcesso: `http://localhost:3000/assinar/${termo.id}` }));
+                return res.json(termo);
             }
             catch (error) {
                 console.error('Erro ao atualizar status:', error);
@@ -119,12 +102,7 @@ exports.TermoController = {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const { id } = req.params;
-                const termo = yield Termo_1.default.findOne({
-                    where: {
-                        id,
-                        userId: req.userId
-                    }
-                });
+                const termo = yield Termo_1.default.findByPk(id);
                 if (!termo) {
                     return res.status(404).json({ error: 'Termo não encontrado' });
                 }
@@ -144,8 +122,7 @@ exports.TermoController = {
                 const { id } = req.params;
                 const termo = yield Termo_1.default.findOne({
                     where: {
-                        id,
-                        userId: req.userId
+                        id: id
                     }
                 });
                 if (!termo) {
