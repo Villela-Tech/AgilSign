@@ -53,7 +53,7 @@ const AssinarTermo = () => {
       };
       
       await TermoService.atualizarStatus(termo.id, updateData);
-      navigate(`/visualizar/${termo.id}`);
+      navigate(`/confirmacao/${termo.id}`);
     } catch (error) {
       console.error('Erro ao salvar assinatura:', error);
       setError('Erro ao salvar assinatura. Por favor, tente novamente.');
