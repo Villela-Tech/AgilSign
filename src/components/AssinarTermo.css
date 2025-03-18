@@ -3,84 +3,101 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: #51C5EA;
+  justify-content: center;
+  background-color: #f8fafc;
   padding: 20px;
+  position: relative;
 }
 
-.logo {
-  width: 100px;
-  min-height: 45px;
-  min-width: 45px;
-  max-width: 100px;
-  max-height: 100px;
-  margin-bottom: 30px;
-}
 
 .assinar-card {
   background: white;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
   width: 100%;
   max-width: 600px;
   margin-bottom: 20px;
-
+  border: 1px solid #e0e0e0;
 }
 
 .assinar-title {
   color: #333;
-  text-align: center;
-  margin-bottom: 0px;
-  font-size: 24px;
+  text-align: left;
+  margin-bottom: 10px;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .signature-instructions {
-  text-align: center;
+  text-align: left;
   margin-bottom: 20px;
 }
 
 .signature-instructions p {
   margin: 5px 0;
   color: #666;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .signature-note {
-  font-size: 14px;
+  font-size: 13px;
   color: #888;
   font-style: italic;
+}
+
+.signature-label {
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  text-align: left;
+  display: block;
 }
 
 .signature-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 10px;
+  align-items: stretch;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.signature-canvas-container {
+  position: relative;
+  width: 100%;
 }
 
 .signature-canvas {
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: none;
+  border-radius: 0;
   touch-action: none;
-  background-color: #fff;
-  height: 150px;
-  width: 30rem;
+  background-color: transparent;
+  height: 120px;
+  width: 100%;
+  border-bottom: 1px dashed #ccc;
 }
 
 .signature-actions {
   display: flex;
   gap: 10px;
   width: 100%;
-  justify-content: center;
+  justify-content: flex-end;
+  margin-top: 20px;
 }
 
 .limpar-button,
 .assinar-button {
   padding: 12px 24px;
   border: none;
-  border-radius: 4px;
-  font-size: 16px;
+  border-radius: 6px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-weight: 500;
 }
 
 .limpar-button {
@@ -95,11 +112,13 @@
 .assinar-button {
   background-color: #51C5EA;
   color: white;
-  font-weight: bold;
+  font-weight: 600;
 }
 
 .assinar-button:hover:not(:disabled) {
   background-color: #3AB1D9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(81, 197, 234, 0.25);
 }
 
 .assinar-button:disabled {
@@ -121,90 +140,156 @@
 }
 
 .copyright {
-  color: white;
+  color: #666;
   text-align: center;
   margin-top: auto;
-  padding: 2px 0;
+  padding: 15px 0;
+  font-size: 12px;
+}
+
+@media (max-width: 900px) {
+  .logo-text {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 0;
+    text-align: center;
+    width: 100%;
+  }
+
+  .assinar-container {
+    padding-top: 70px;
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 800px) {
   .assinar-card {
-    padding: 15px;
+    padding: 1.5rem;
     margin: 10px;
-    background-color: rgb(255, 255, 255);
-
   }
 
-  .logo {
-    width: 0px;
-    margin-bottom: 20px;
-  }
 
   .assinar-title {
-    font-size: 20px;
-    margin-bottom: 10px;
+    font-size: 15px;
   }
 
   .signature-actions {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
   }
 
   .limpar-button,
   .assinar-button {
-    width: 100%;
-    padding: 15px;
+    padding: 10px 20px;
+    font-size: 14px;
   }
 }
 
-/* Responsivo para telas com largura de 480px ou menos */
 @media (max-width: 480px) {
   .assinar-container {
-    padding: 0px;
+    padding: 10px;
+    padding-top:200px;
+    justify-content: center;
   }
 
   .assinar-card {
-    padding: 15px;
+    padding: 1.25rem;
     margin: 0;
-    width: 80%;
-    margin-top: 200px;
-    margin-right: 20px;
-    margin-left: 20px;
+    width: 90%;
+    max-width: none;
+    border-radius: 10px;
+    margin: 0 auto;
   }
 
   .signature-canvas {
-    width: 100%;
-
-
+    height: 100px;
   }
 
-  .copyright{
-    margin-bottom: 20px;
+  .copyright {
+    margin-bottom: 10px;
+    font-size: 11px;
   }
 
-  .logo {
-    width: 100px;
+  .logo-text {
+    font-size: 1.5rem;
     margin-bottom: 15px;
-    margin-left: 125px;
-    margin-right: 125px;
+    width: 100%;
+    text-align: center;
   }
 
   .assinar-title {
-    font-size: 18px;
-    margin-bottom: 15px;
+    font-size: 14px;
   }
 
   .signature-actions {
-    flex-direction: column;
-    align-items: stretch;
-    width: 100%;
-    gap: 10px;
+    margin-top: 15px;
   }
 
   .limpar-button,
   .assinar-button {
-    width: 100%;
-    padding: 12px 0;
-    font-size: 14px;
+    padding: 10px 16px;
+    font-size: 13px;
   }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .assinar-container {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+  }
+  
+  .logo-text {
+    position: relative;
+    top: 0;
+    left: 0;
+    transform: none;
+    margin: 0 auto 20px auto;
+    text-align: center;
+    width: 100%;
+    font-size: 1.4rem;
+  }
+  
+  .assinar-card {
+    margin: 0 auto;
+    width: 90%;
+    max-width: 500px;
+    height: auto;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  
+  .signature-container {
+    margin-top: 15px;
+  }
+  
+  .signature-canvas {
+    height: 80px;
+  }
+  
+  .signature-actions {
+    margin-top: 15px;
+  }
+  
+  .copyright {
+    position: absolute;
+    bottom: 5px;
+    right: 10px;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+.logo-text {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #51C5EA;
+  margin-bottom: 30px;
+  background: linear-gradient(135deg, #51C5EA 0%, #3AB1D9 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
 }

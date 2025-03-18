@@ -1475,4 +1475,41 @@
   .pagination {
     flex-wrap: wrap;
   }
+}
+
+.signature-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  margin: 2rem 0;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.signature-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+}
+
+.signature-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333333;
+  margin-bottom: 1rem;
+}
+
+.signature-image {
+  max-width: 100%;
+  height: auto;
+  border: 1px dashed #cccccc;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.signature-instructions {
+  font-size: 0.95rem;
+  color: #666666;
+  margin-bottom: 1.5rem;
 } 
