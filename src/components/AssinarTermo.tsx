@@ -53,7 +53,7 @@ const AssinarTermo = () => {
       };
       
       await TermoService.atualizarStatus(termo.id, updateData);
-      navigate(`/visualizar/${termo.id}`);
+      navigate(`/confirmacao/${termo.id}`);
     } catch (error) {
       console.error('Erro ao salvar assinatura:', error);
       setError('Erro ao salvar assinatura. Por favor, tente novamente.');
@@ -83,7 +83,7 @@ const AssinarTermo = () => {
 
   return (
     <div className="assinar-container">
-      <img src="/images/logo.png" alt="Logo" className="logo" />
+      <h1 className="logo-text">AgilSign</h1>
       
       <div className="assinar-card">
         <h2 className="assinar-title">Assinatura Digital</h2>

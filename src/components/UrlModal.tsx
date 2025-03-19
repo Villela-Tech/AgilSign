@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { TermoService } from '../services/api';
 import './UrlModal.css';
 
 interface UrlModalProps {
@@ -9,7 +8,17 @@ interface UrlModalProps {
 
 const UrlModal: React.FC<UrlModalProps> = ({ termoId, onClose }) => {
   const [copied, setCopied] = useState(false);
-  const url = TermoService.gerarLinkAssinatura(termoId);
+  
+  // Define a URL base baseada no ambiente
+  const baseUrl = process.env.NODE_ENV === 'production' 
+    ? 'https://ville5113.c44.integrator.host'
+    : window.location.origin;
+    
+  const url = `${baseUrl}/assinar/${termoId}`;
+
+  console.log('Ambiente:', process.env.NODE_ENV);
+  console.log('URL base:', baseUrl);
+  console.log('URL gerada:', url);
 
   const handleCopyUrl = async () => {
     try {

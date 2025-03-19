@@ -5,7 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const sequelize_1 = require("sequelize");
 const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config();
+dotenv_1.default.config({
+    path: process.env.NODE_ENV === 'development' ? '.env.development' : '.env'
+});
 const sequelize = new sequelize_1.Sequelize({
     dialect: 'mysql',
     host: process.env.DB_HOST,
@@ -18,6 +20,15 @@ const sequelize = new sequelize_1.Sequelize({
         charset: 'utf8mb4',
         collate: 'utf8mb4_0900_ai_ci',
         timestamps: true
+    },
+    dialectOptions: {
+        connectTimeout: 60000
+    },
+    pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
     }
 });
 exports.default = sequelize;

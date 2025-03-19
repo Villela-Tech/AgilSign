@@ -1,50 +1,31 @@
-# Getting Started with Create React App
+# ✨ **AgilSign - Gestão de Assinaturas de Termos no Mobile** ✨
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+**AgilSign** é uma plataforma inovadora e móvel, projetada para facilitar a **criação, gestão e assinatura de termos eletrônicos** de maneira rápida e eficiente. Com uma interface intuitiva e simples de usar, você pode gerar documentos assinados, monitorar status e gerenciar seus termos de maneira otimizada, tudo de onde estiver! 🚀
 
-## Available Scripts
+## 💡 **Funcionalidades Principais**
 
-In the project directory, you can run:
+### 1. **📝 Criar Termos**
+Crie e defina seus termos e condições com facilidade! O AgilSign permite que você crie documentos personalizados de maneira rápida e eficiente.
 
-### `npm start`
+### 2. **🔗 Gerar Link**
+Compartilhe os termos criados de forma prática! Basta gerar um link exclusivo para que os destinatários possam revisar e assinar os documentos diretamente.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### 3. **✍️ Processo de Assinatura**
+Com um simples toque, o técnico pode assinar o documento e concluir o processo, garantindo a conformidade legal com facilidade e segurança.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+### 4. **📥 Pronto para Download**
+Assim que o termo for assinado, ele fica disponível para download diretamente do painel de administração. Organize, armazene e acesse seus documentos sempre que precisar.
 
-### `npm test`
+### 5. **📊 Estatísticas de Status**
+Acompanhe em tempo real o status dos seus termos! O AgilSign oferece uma visão clara de **termos pendentes, assinados** e **recentes**, permitindo que você gerencie os documentos com mais eficiência.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 🚀 **Vantagens do AgilSign**
 
-### `npm run build`
+- **Agilidade**: Complete os processos de assinatura em poucos minutos.
+- **Segurança**: Todos os documentos são assinados digitalmente, garantindo a autenticidade.
+- **Acessibilidade**: Disponível para uso em dispositivos móveis, tornando-o acessível a qualquer hora e em qualquer lugar.
+- **Gestão Simples**: Acompanhe o progresso dos termos e receba notificações sobre pendências e finalizações.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+---
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-teteteteteteste
-
-
-teskjfgjdkjsda fsdajkdaskjldaskjlasdjkl 
+Quer saber mais ou testar? 🚀 Explore o projeto e comece a gerenciar seus termos agora mesmo!

@@ -3,10 +3,11 @@ import axios from 'axios';
 // URL base da API
 export const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 // URL base do frontend
-export const FRONTEND_URL = 'http://localhost:3000';
+export const FRONTEND_URL = process.env.REACT_APP_FRONTEND_URL || 'http://localhost:3000';
 
 export const api = axios.create({
-  baseURL: API_URL
+  baseURL: API_URL,
+  withCredentials: true
 });
 
 // Interceptor para adicionar o token de autenticação

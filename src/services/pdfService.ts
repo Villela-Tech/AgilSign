@@ -98,8 +98,16 @@ export const generateTermoRecebimento = async (data: TermoRecebimentoData) => {
 
   // Data e Local
   currentY += 15;
-  const dataAtual = data.data || new Date().toLocaleDateString('pt-BR');
-  doc.text( + dataAtual, pageWidth - marginRight - 50, currentY);
+  const dataAtual = data.data ? new Date(data.data).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  }) : new Date().toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+  doc.text('Data: ' + dataAtual, pageWidth - marginRight - 50, currentY);
 
   // Área de assinatura
   currentY += 30;
