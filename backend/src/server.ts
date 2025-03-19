@@ -11,14 +11,23 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://ville5113.c44.integrator.host';
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+  origin: FRONTEND_URL,
+  credentials: true
+}));
 app.use(express.json());
 
 // Rotas
 app.use('/api/auth', authRoutes);
 app.use('/api/termos', authMiddleware, termoRoutes);
+
+// Status da aplicação
+app.get('/status', (req, res) => {
+  res.status(200).json({ status: 'online', environment: process.env.NODE_ENV });
+});
 
 async function createAdminUser() {
   try {
@@ -40,17 +49,18 @@ async function createAdminUser() {
 async function initializeDatabase() {
   try {
     await sequelize.authenticate();
-    console.log('Conexão com o SQLite estabelecida com sucesso.');
+    console.log('Conexão com o MySQL estabelecida com sucesso.');
 
-    // Força a recriação das tabelas
-    await sequelize.sync({ force: true });
-    console.log('Modelos sincronizados com o banco de dados (tabelas recriadas).');
+    // Sincroniza os modelos com o banco de dados sem forçar recriação
+    await sequelize.sync();
+    console.log('Modelos sincronizados com o banco de dados.');
 
-    // Criar usuário admin
+    // Criar usuário admin se não existir
     await createAdminUser();
 
-    app.listen(PORT, () => {
+    app.listen(Number(PORT), '0.0.0.0', () => {
       console.log(`Servidor rodando na porta ${PORT}`);
+      console.log(`Frontend URL: ${FRONTEND_URL}`);
     });
   } catch (error) {
     console.error('Erro ao conectar ao banco de dados:', error);

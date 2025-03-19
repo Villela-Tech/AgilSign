@@ -121,7 +121,15 @@ export const TermoController = {
         email: termo.email,
         equipamento: termo.equipamento,
         assinatura: termo.assinatura,
-        data: termo.createdAt.toLocaleDateString('pt-BR')
+        data: termo.data ? new Date(termo.data).toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        }) : termo.createdAt.toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        })
       });
 
       const pdfBytes = pdfDoc.output('arraybuffer');

@@ -1,12 +1,32 @@
 import { Sequelize } from 'sequelize';
-import path from 'path';
+import dotenv from 'dotenv';
 
-const dbPath = path.join(__dirname, '..', '..', 'database.sqlite');
+dotenv.config({
+  path: process.env.NODE_ENV === 'development' ? '.env.development' : '.env'
+});
 
 const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: dbPath,
-  logging: false
+  dialect: 'mysql',
+  host: process.env.DB_HOST,
+  port: parseInt(process.env.DB_PORT || '3306'),
+  database: process.env.DB_NAME,
+  username: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  logging: false,
+  define: {
+    charset: 'utf8mb4',
+    collate: 'utf8mb4_0900_ai_ci',
+    timestamps: true
+  },
+  dialectOptions: {
+    connectTimeout: 60000
+  },
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
+  }
 });
 
 export default sequelize; 

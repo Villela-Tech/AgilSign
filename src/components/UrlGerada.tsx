@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { FRONTEND_URL } from '../services/api';
 import './UrlGerada.css';
 
 interface UrlGeradaProps {
@@ -10,7 +11,7 @@ interface UrlGeradaProps {
 const UrlGerada: React.FC<UrlGeradaProps> = ({ onClose }) => {
   const [copiado, setCopiado] = useState(false);
   const { id } = useParams<{ id: string }>();
-  const url = `${window.location.origin}/assinar/${id}`;
+  const url = `${FRONTEND_URL}/assinar/${id}`;
 
   console.log("URL Gerada:", url);
 
@@ -34,7 +35,7 @@ const UrlGerada: React.FC<UrlGeradaProps> = ({ onClose }) => {
         <div className="modal-body">
           <p>A URL gerada é:</p>
           <div className="url-display">
-            <span>{url.replace(window.location.origin, '')}</span>
+            <span>{url}</span>
             <button onClick={handleCopiar} className="copy-button">
               {copiado ? '✓' : '📋'}
             </button>

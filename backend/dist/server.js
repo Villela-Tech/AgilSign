@@ -18,25 +18,57 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const database_1 = __importDefault(require("./config/database"));
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const termo_routes_1 = __importDefault(require("./routes/termo.routes"));
+const user_model_1 = __importDefault(require("./models/user.model"));
 const auth_middleware_1 = require("./middleware/auth.middleware");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3001;
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://ville5113.c44.integrator.host';
 // Middlewares
-app.use((0, cors_1.default)());
+app.use((0, cors_1.default)({
+    origin: FRONTEND_URL,
+    credentials: true
+}));
 app.use(express_1.default.json());
 // Rotas
 app.use('/api/auth', auth_routes_1.default);
 app.use('/api/termos', auth_middleware_1.authMiddleware, termo_routes_1.default);
+// Status da aplicação
+app.get('/status', (req, res) => {
+    res.status(200).json({ status: 'online', environment: process.env.NODE_ENV });
+});
+function createAdminUser() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const adminUser = yield user_model_1.default.findOne({ where: { email: 'admin@agilsign.com' } });
+            if (!adminUser) {
+                yield user_model_1.default.create({
+                    name: 'Admin',
+                    email: 'admin@agilsign.com',
+                    password: '123456',
+                    role: 'admin'
+                });
+                console.log('Usuário admin criado com sucesso');
+            }
+        }
+        catch (error) {
+            console.error('Erro ao criar usuário admin:', error);
+        }
+    });
+}
 function initializeDatabase() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             yield database_1.default.authenticate();
-            console.log('Conexão com o SQLite estabelecida com sucesso.');
+            console.log('Conexão com o MySQL estabelecida com sucesso.');
+            // Sincroniza os modelos com o banco de dados sem forçar recriação
             yield database_1.default.sync();
             console.log('Modelos sincronizados com o banco de dados.');
-            app.listen(PORT, () => {
+            // Criar usuário admin se não existir
+            yield createAdminUser();
+            app.listen(Number(PORT), '0.0.0.0', () => {
                 console.log(`Servidor rodando na porta ${PORT}`);
+                console.log(`Frontend URL: ${FRONTEND_URL}`);
             });
         }
         catch (error) {
