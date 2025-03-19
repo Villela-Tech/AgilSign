@@ -19,6 +19,7 @@ export const authService = {
       });
       return response.data;
     } catch (error: any) {
+      console.error('Login error:', error);
       throw new Error(error.response?.data?.message || 'Erro ao fazer login');
     }
   },
