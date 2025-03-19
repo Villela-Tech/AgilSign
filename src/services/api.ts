@@ -3,7 +3,7 @@ import axios from 'axios';
 // URL base da API
 export const API_URL = 'http://localhost:3001/api';
 // URL base do frontend
-export const FRONTEND_URL = 'http://localhost:3000';
+export const FRONTEND_URL = 'https://ville5113.c44.integrator.host';
 
 export const api = axios.create({
   baseURL: API_URL
