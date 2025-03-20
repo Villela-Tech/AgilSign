@@ -48,16 +48,27 @@ const Dashboard: React.FC = () => {
   const carregarTermos = async () => {
     try {
       const data = await TermoService.listar();
-      setTermos(data);
+      setTermos(Array.isArray(data) ? data : []);
+      setError(null);
     } catch (err) {
-      setError('Erro ao carregar os termos. Por favor, tente novamente.');
       console.error('Erro ao carregar termos:', err);
+      setTermos([]);
+      setError('Erro ao carregar os termos. Por favor, tente novamente.');
     } finally {
       setLoading(false);
     }
   };
 
   const calcularEstatisticas = (): DashboardStats => {
+    if (!Array.isArray(termos)) {
+      return {
+        pendentes: 0,
+        assinados: 0,
+        recentes: 0,
+        total: 0
+      };
+    }
+
     const hoje = new Date();
     const ultimasHoras = new Date(hoje.getTime() - (24 * 60 * 60 * 1000));
 
@@ -71,7 +82,7 @@ const Dashboard: React.FC = () => {
 
   const stats = calcularEstatisticas();
 
-  const filteredTermos = termos.filter(termo => {
+  const filteredTermos = Array.isArray(termos) ? termos.filter(termo => {
     const matchesSearch = (
       termo.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       termo.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -81,7 +92,7 @@ const Dashboard: React.FC = () => {
     const matchesStatus = filterStatus === 'todos' || termo.status === filterStatus;
 
     return matchesSearch && matchesStatus;
-  });
+  }) : [];
   
   // Cálculo para paginação
   const indexOfLastTermo = currentPage * itemsPerPage;

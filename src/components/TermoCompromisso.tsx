@@ -86,32 +86,36 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
       const termoData = {
         nome: formData.nome.trim(),
         sobrenome: formData.sobrenome.trim(),
-        email: formData.email,
+        email: formData.email || 'no-email@example.com',
         equipamento: `${formData.equipamento.trim()} (S/N: ${formData.numeroSerie.trim()})`,
-        equipe: formData.equipe.trim(),
-        data: formData.data
+        status: 'pendente' as const
       };
 
+      console.log('Dados formatados para envio:', termoData);
+      
       const response = await TermoService.criar(termoData);
+      console.log('Resposta após criar termo:', response);
 
       if (response && response.id) {
-        const url = TermoService.gerarLinkAssinatura(response.id);
+        console.log('Termo criado com sucesso:', response);
         
         if (onUrlGenerated) {
-          onUrlGenerated(url, response.id);
+          onUrlGenerated(response.urlAcesso, response.id);
         } else {
-          window.location.href = url;
+          navigate(`/termo/${response.id}/url`);
         }
         
         if (onComplete) {
           onComplete();
         }
       } else {
+        console.error('Resposta inválida:', response);
         throw new Error('Resposta inválida do servidor');
       }
-    } catch (err) {
-      console.error('Erro detalhado:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao gerar URL. Por favor, tente novamente.');
+    } catch (err: any) {
+      console.error('Erro completo ao criar termo:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Erro ao criar termo. Por favor, tente novamente.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

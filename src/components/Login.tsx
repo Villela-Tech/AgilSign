@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth.service';
 import './Login.css';
@@ -10,17 +10,37 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    // Se já estiver autenticado, redireciona para o dashboard
+    if (authService.isAuthenticated()) {
+      navigate('/dashboard');
+    }
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const data = await authService.login(email, password);
-      authService.setToken(data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      const response = await authService.login(email, password);
+      console.log('Login bem sucedido:', response);
+      
+      if (!response.token) {
+        throw new Error('Token não recebido do servidor');
+      }
+
+      // Salva o token e os dados do usuário
+      authService.setToken(response.token);
+      localStorage.setItem('user', JSON.stringify(response.user));
+      
+      console.log('Token salvo:', response.token);
+      console.log('Usuário salvo:', response.user);
+
+      // Redireciona para o dashboard
       navigate('/dashboard');
     } catch (error) {
+      console.error('Erro no login:', error);
       setError(error instanceof Error ? error.message : 'Erro ao fazer login');
     } finally {
       setLoading(false);
@@ -93,6 +113,7 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={loading}
               />
               <span className="input-icon">
                 <svg viewBox="0 0 24 24" width="20" height="20">
@@ -108,6 +129,7 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={loading}
               />
               <span className="input-icon">
                 <svg viewBox="0 0 24 24" width="20" height="20">
