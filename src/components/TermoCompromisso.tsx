@@ -45,10 +45,9 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    const formattedDate = value ? new Date(value).toISOString().split('T')[0] : '';
     setFormData(prev => ({
       ...prev,
-      [name]: formattedDate
+      [name]: value
     }));
     setError(null);
   };

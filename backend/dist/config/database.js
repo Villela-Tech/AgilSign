@@ -4,31 +4,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const sequelize_1 = require("sequelize");
-const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config({
-    path: process.env.NODE_ENV === 'development' ? '.env.development' : '.env'
-});
+const path_1 = __importDefault(require("path"));
+const dbPath = path_1.default.join(__dirname, '..', '..', 'database.sqlite');
 const sequelize = new sequelize_1.Sequelize({
-    dialect: 'mysql',
-    host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT || '3306'),
-    database: process.env.DB_NAME,
-    username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    logging: false,
-    define: {
-        charset: 'utf8mb4',
-        collate: 'utf8mb4_0900_ai_ci',
-        timestamps: true
-    },
-    dialectOptions: {
-        connectTimeout: 60000
-    },
-    pool: {
-        max: 5,
-        min: 0,
-        acquire: 30000,
-        idle: 10000
-    }
+    dialect: 'sqlite',
+    storage: dbPath,
+    logging: false
 });
 exports.default = sequelize;

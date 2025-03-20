@@ -2,19 +2,22 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const TermoController_1 = require("../controllers/TermoController");
+const auth_middleware_1 = require("../middleware/auth.middleware");
 const router = (0, express_1.Router)();
+// Rotas protegidas (requerem autenticação)
+router.use(auth_middleware_1.authMiddleware);
 // Criar novo termo
-router.post('/', TermoController_1.TermoController.criar);
+router.post('/termos', TermoController_1.TermoController.criar);
 // Buscar termo por ID
-router.get('/:id', TermoController_1.TermoController.buscarPorId);
+router.get('/termos/:id', TermoController_1.TermoController.buscarPorId);
 // Buscar termo por URL de acesso
-router.get('/acesso/:urlAcesso', TermoController_1.TermoController.buscarPorUrlAcesso);
+router.get('/termos/acesso/:urlAcesso', TermoController_1.TermoController.buscarPorUrlAcesso);
 // Listar todos os termos
-router.get('/', TermoController_1.TermoController.listar);
+router.get('/termos', TermoController_1.TermoController.listar);
 // Atualizar status do termo
-router.patch('/:id/status', TermoController_1.TermoController.atualizarStatus);
+router.patch('/termos/:id/status', TermoController_1.TermoController.atualizarStatus);
 // Excluir termo
-router.delete('/:id', TermoController_1.TermoController.excluir);
+router.delete('/termos/:id', TermoController_1.TermoController.excluir);
 // Download do PDF do termo
-router.get('/:id/pdf', TermoController_1.TermoController.downloadPDF);
+router.get('/termos/:id/pdf', TermoController_1.TermoController.downloadPDF);
 exports.default = router;
