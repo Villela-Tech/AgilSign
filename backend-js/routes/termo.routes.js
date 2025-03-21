@@ -32,6 +32,9 @@ router.post('/assinar/:urlAcesso', assinaturaValidation, termoController.sign);
 // Buscar termo por ID
 router.get('/:id', termoController.getById);
 
+// Download do PDF do termo
+router.get('/:id/pdf', termoController.downloadPDF);
+
 // Atualizar termo
 router.put('/:id', termoValidation, termoController.update);
 

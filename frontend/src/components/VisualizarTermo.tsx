@@ -29,11 +29,22 @@ const VisualizarTermo: React.FC = () => {
   }, [id]);
 
   const handleDownload = async () => {
-    if (!termo) return;
+    if (!termo) {
+      console.error('[VisualizarTermo] Tentativa de download sem termo carregado');
+      return;
+    }
+    
+    console.log('[VisualizarTermo] Iniciando download do PDF para termo:', {
+      id: termo.id,
+      nome: termo.nome,
+      status: termo.status
+    });
     
     setDownloading(true);
     try {
-      const blob = await TermoService.downloadPDF(termo.id);
+      const blob = await TermoService.downloadPDF(String(termo.id));
+      console.log('[VisualizarTermo] PDF recebido com sucesso');
+      
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -43,7 +54,7 @@ const VisualizarTermo: React.FC = () => {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (err) {
-      console.error('Erro ao baixar termo:', err);
+      console.error('[VisualizarTermo] Erro ao baixar termo:', err);
       setError('Não foi possível baixar o termo. Por favor, tente novamente.');
       setTimeout(() => setError(null), 5000);
     } finally {
@@ -158,4 +169,4 @@ const VisualizarTermo: React.FC = () => {
   );
 };
 
-export default VisualizarTermo; 
+export default VisualizarTermo;

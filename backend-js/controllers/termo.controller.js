@@ -50,11 +50,14 @@ const list = async (req, res) => {
 
 // Buscar termo por ID
 const getById = async (req, res) => {
+  console.log('Recebida requisição para buscar termo por ID:', req.params.id);
   try {
     const termo = await Termo.findByPk(req.params.id);
     if (!termo) {
+      console.log('Termo não encontrado para o ID:', req.params.id);
       return res.status(404).json({ message: 'Termo não encontrado' });
     }
+    console.log('Termo encontrado:', termo.id);
     res.json(termo);
   } catch (error) {
     console.error('Erro ao buscar termo:', error);
@@ -180,6 +183,76 @@ const remove = async (req, res) => {
   }
 };
 
+// Download do PDF do termo
+const downloadPDF = async (req, res) => {
+  console.log('Recebida requisição para download do PDF. ID:', req.params.id);
+  try {
+    const termo = await Termo.findByPk(req.params.id);
+    if (!termo) {
+      console.log('Termo não encontrado para o ID:', req.params.id);
+      return res.status(404).json({ message: 'Termo não encontrado' });
+    }
+
+    console.log('Termo encontrado, gerando PDF...');
+    console.log('Dados do termo:', {
+      id: termo.id,
+      nome: termo.nome,
+      sobrenome: termo.sobrenome,
+      status: termo.status,
+      temAssinatura: !!termo.assinatura
+    });
+
+    // Gerar o PDF
+    const PDFDocument = require('pdfkit');
+    const doc = new PDFDocument();
+
+    // Configurar headers para download
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=termo-${termo.id}.pdf`);
+
+    // Pipe o PDF direto para a resposta
+    doc.pipe(res);
+
+    // Adicionar conteúdo ao PDF
+    doc.fontSize(16).text('Termo de Compromisso', { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(12).text(`Nome: ${termo.nome} ${termo.sobrenome}`);
+    doc.moveDown();
+    doc.text(`Email: ${termo.email}`);
+    doc.moveDown();
+    doc.text(`Equipamento: ${termo.equipamento}`);
+    doc.moveDown();
+    doc.text(`Status: ${termo.status}`);
+    
+    if (termo.assinatura) {
+      console.log('Adicionando assinatura ao PDF...');
+      doc.moveDown();
+      doc.text('Assinatura:');
+      try {
+        const assinaturaBase64 = termo.assinatura.split(',')[1];
+        console.log('Base64 da assinatura extraído');
+        const assinaturaBuffer = Buffer.from(assinaturaBase64, 'base64');
+        console.log('Buffer da assinatura criado');
+        doc.image(assinaturaBuffer, {
+          fit: [200, 100],
+          align: 'center'
+        });
+        console.log('Assinatura adicionada ao PDF');
+      } catch (err) {
+        console.error('Erro ao adicionar assinatura:', err);
+      }
+    }
+
+    // Finalizar o PDF
+    console.log('Finalizando PDF...');
+    doc.end();
+    console.log('PDF gerado com sucesso');
+  } catch (error) {
+    console.error('Erro ao gerar PDF:', error);
+    res.status(500).json({ message: 'Erro ao gerar PDF', error: error.message });
+  }
+};
+
 module.exports = {
   create,
   list,
@@ -187,5 +260,6 @@ module.exports = {
   getByUrl,
   sign,
   update,
-  remove
+  remove,
+  downloadPDF
 };

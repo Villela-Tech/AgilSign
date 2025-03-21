@@ -209,14 +209,18 @@ export const TermoService = {
   },
 
   downloadPDF: async (id: string): Promise<Blob> => {
+    console.log('[API] downloadPDF - Iniciando download para ID:', id);
     try {
-      const response = await api.get(`/termos/${id}/pdf`, {
-        responseType: 'arraybuffer'
+      const response = await api.get<ArrayBuffer>(`/termos/${id}/pdf`, {
+        responseType: 'arraybuffer',
+        headers: {
+          'Accept': 'application/pdf'
+        }
       });
-
-      return new Blob([response.data as ArrayBuffer], { type: 'application/pdf' });
+      console.log('[API] downloadPDF - PDF recebido com sucesso');
+      return new Blob([response.data], { type: 'application/pdf' });
     } catch (error) {
-      console.error('Erro ao baixar PDF:', error);
+      console.error('[API] downloadPDF - Erro:', error);
       throw error;
     }
   },
