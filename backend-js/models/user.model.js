@@ -22,6 +22,7 @@ User.init(
     email: {
       type: DataTypes.STRING,
       allowNull: false,
+      unique: true,
       validate: {
         isEmail: true,
       },
@@ -38,6 +39,7 @@ User.init(
   {
     sequelize,
     tableName: 'users',
+    timestamps: true, 
     hooks: {
       beforeCreate: async (user) => {
         if (user.password) {
@@ -55,4 +57,4 @@ User.init(
   }
 );
 
-module.exports = User; 
+module.exports = User;

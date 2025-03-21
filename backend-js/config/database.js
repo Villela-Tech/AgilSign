@@ -8,7 +8,7 @@ const sequelize = new Sequelize(
     {
         host: process.env.DB_HOST,
         port: process.env.DB_PORT,
-        dialect: 'mysql',
+        dialect: process.env.DB_DIALECT || 'mysql',
         logging: process.env.NODE_ENV === 'production' ? false : console.log,
         define: {
             timestamps: true,
@@ -19,16 +19,18 @@ const sequelize = new Sequelize(
             min: 0,
             acquire: 30000,
             idle: 10000
-        },
-        dialectOptions: {
-            connectTimeout: 60000,
-            // SSL configuration if needed
-            // ssl: {
-            //     require: true,
-            //     rejectUnauthorized: false
-            // }
         }
     }
 );
 
-module.exports = sequelize; 
+// Testar a conexão
+sequelize
+    .authenticate()
+    .then(() => {
+        console.log('Conexão com o banco de dados estabelecida com sucesso.');
+    })
+    .catch(err => {
+        console.error('Erro ao conectar com o banco de dados:', err);
+    });
+
+module.exports = sequelize;

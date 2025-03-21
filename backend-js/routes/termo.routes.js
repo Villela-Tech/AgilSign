@@ -1,27 +1,30 @@
-const { Router } = require('express');
-const { TermoController } = require('../controllers/TermoController');
+const express = require('express');
+const router = express.Router();
+const termoController = require('../controllers/termo.controller');
+const { check } = require('express-validator');
 
-const router = Router();
+// Validação para criação/atualização de termo
+const termoValidation = [
+  check('nome').notEmpty().withMessage('Nome é obrigatório'),
+  check('sobrenome').notEmpty().withMessage('Sobrenome é obrigatório'),
+  check('email').isEmail().withMessage('Email inválido'),
+  check('equipamento').notEmpty().withMessage('Equipamento é obrigatório'),
+  check('status').optional().isIn(['pendente', 'assinado', 'cancelado']).withMessage('Status inválido')
+];
 
 // Criar novo termo
-router.post('/', TermoController.criar);
-
-// Buscar termo por ID
-router.get('/:id', TermoController.buscarPorId);
-
-// Buscar termo por URL de acesso
-router.get('/acesso/:urlAcesso', TermoController.buscarPorUrlAcesso);
+router.post('/', termoValidation, termoController.create);
 
 // Listar todos os termos
-router.get('/', TermoController.listar);
+router.get('/', termoController.list);
 
-// Atualizar status do termo
-router.patch('/:id/status', TermoController.atualizarStatus);
+// Buscar termo por ID
+router.get('/:id', termoController.getById);
 
-// Excluir termo
-router.delete('/:id', TermoController.excluir);
+// Atualizar termo
+router.put('/:id', termoValidation, termoController.update);
 
-// Download do PDF do termo
-router.get('/:id/pdf', TermoController.downloadPDF);
+// Deletar termo
+router.delete('/:id', termoController.remove);
 
-module.exports = router; 
+module.exports = router;

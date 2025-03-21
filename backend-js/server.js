@@ -1,191 +1,163 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const https = require('https');
+const helmet = require('helmet');
+const compression = require('compression');
+const morgan = require('morgan');
 const fs = require('fs');
-const path = require('path');
-const dotenv = require('dotenv');
-const sequelize = require('./config/database');
-const authRoutes = require('./routes/auth.routes');
-const termoRoutes = require('./routes/termo.routes');
-const User = require('./models/user.model');
+const https = require('https');
+const { Sequelize } = require('sequelize');
+const winston = require('winston');
+const rateLimit = require('express-rate-limit');
 const { authMiddleware } = require('./middleware/auth.middleware');
-const config = require('./config/config');
 
-// Carrega variáveis de ambiente
-dotenv.config();
-
-const app = express();
-const PORT = process.env.PORT || 443;
-const HOST = '0.0.0.0'; // Permite conexões de qualquer IP
-
-// Middlewares
-app.use(cors({
-  origin: '*',  // Permite todas as origens
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Access-Control-Allow-Origin'],
-  exposedHeaders: ['Content-Range', 'X-Content-Range'],
-  credentials: false, // Desativa credentials quando using origin: '*'
-  maxAge: 86400 // Cache preflight por 24 horas
-}));
-
-// Adiciona headers de segurança e CORS
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('X-Content-Type-Options', 'nosniff');
-  res.header('X-Frame-Options', 'DENY');
-  res.header('X-XSS-Protection', '1; mode=block');
-  res.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  
-  // Handle OPTIONS method
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  
-  next();
+// Configuração do Logger
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
+    new winston.transports.File({ filename: 'logs/combined.log' })
+  ]
 });
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-
-// Log de todas as requisições
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url} - IP: ${req.ip}`);
-  next();
-});
-
-// Rota de verificação de saúde
-app.get('/', (req, res) => {
-  res.json({ 
-    message: 'API AgilSign está funcionando!', 
-    status: 'online', 
-    timestamp: new Date().toISOString(),
-    ipAddress: req.ip || req.connection.remoteAddress,
-    domain: config.BASE_URL
-  });
-});
-
-// Rota de verificação explícita de API
-app.get('/api', (req, res) => {
-  res.json({ 
-    message: 'API AgilSign está funcionando!', 
-    version: '1.0.0',
-    status: 'online',
-    timestamp: new Date().toISOString(),
-    ipAddress: req.ip || req.connection.remoteAddress,
-    domain: config.BASE_URL,
-    routes: {
-      auth: '/api/auth',
-      termos: '/api/termos'
-    }
-  });
-});
-
-// Rotas
-app.use('/api/auth', authRoutes);
-app.use('/api/termos', authMiddleware, termoRoutes);
-
-async function createAdminUser() {
-  try {
-    const adminUser = await User.findOne({ where: { email: 'admin@agilsign.com' } });
-    if (!adminUser) {
-      await User.create({
-        name: 'Admin',
-        email: 'admin@agilsign.com',
-        password: '123456',
-        role: 'admin'
-      });
-      console.log('Usuário admin criado com sucesso');
-    }
-  } catch (error) {
-    console.error('Erro ao criar usuário admin:', error);
-  }
+if (process.env.NODE_ENV !== 'production') {
+  logger.add(new winston.transports.Console({
+    format: winston.format.simple()
+  }));
 }
 
+const app = express();
+
+// Configurações básicas
+const PORT = process.env.PORT || 443;
+const HOST = process.env.HOST || '0.0.0.0';
+
+// Middleware de segurança
+app.use(helmet());
+app.use(compression());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Configuração do CORS
+const corsOptions = {
+  origin: process.env.ALLOWED_ORIGINS === '*' 
+    ? '*' 
+    : process.env.ALLOWED_ORIGINS.split(','),
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+app.use(cors(corsOptions));
+
+// Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100 // limite de 100 requisições por windowMs
+});
+app.use(limiter);
+
+// Logging
+app.use(morgan('combined'));
+
+// Configuração do Sequelize
+const sequelize = new Sequelize(
+  process.env.DB_NAME,
+  process.env.DB_USER,
+  process.env.DB_PASSWORD,
+  {
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    dialect: 'mysql',
+    logging: (msg) => logger.debug(msg)
+  }
+);
+
+// Rota de Health Check
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date(),
+    uptime: process.uptime()
+  });
+});
+
+// Importar rotas
+const authRoutes = require('./routes/auth.routes');
+const termoRoutes = require('./routes/termo.routes');
+
+// Rotas públicas
+app.use('/api/auth', authRoutes);
+
+// Rotas protegidas
+app.use('/api/termos', authMiddleware, termoRoutes);
+
+// Middleware de erro global
+app.use((err, req, res, next) => {
+  logger.error('Erro:', err);
+  res.status(500).json({
+    error: 'Erro interno do servidor',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
+// Inicialização do banco de dados
 async function initializeDatabase() {
   try {
     await sequelize.authenticate();
-    console.log('Conexão com o MySQL estabelecida com sucesso.');
+    logger.info('Conexão com o banco de dados estabelecida com sucesso.');
+    
+    // Sincronize os modelos com o banco de dados
+    await sequelize.sync({ force: true }); // Força a recriação das tabelas
+    logger.info('Modelos sincronizados com o banco de dados.');
 
-    // Sincroniza os modelos com o banco de dados (sem forçar alterações)
-    await sequelize.sync({ force: false, alter: false });
-    console.log('Modelos sincronizados com o banco de dados.');
-
-    // Criar usuário admin se não existir
-    await createAdminUser();
-
-    try {
-      // Configuração HTTPS
-      const certPath = '/etc/letsencrypt/live/apiagilsign.villelatech.com.br';
-      console.log('Verificando certificados em:', certPath);
-      
-      const httpsOptions = {
-        key: fs.readFileSync(path.join(certPath, 'privkey.pem')),
-        cert: fs.readFileSync(path.join(certPath, 'fullchain.pem')),
-        ca: fs.readFileSync(path.join(certPath, 'chain.pem')),
-        secureProtocol: 'TLSv1_2_method',
-        ciphers: [
-          "ECDHE-RSA-AES128-GCM-SHA256",
-          "ECDHE-ECDSA-AES128-GCM-SHA256",
-          "ECDHE-RSA-AES256-GCM-SHA384",
-          "ECDHE-ECDSA-AES256-GCM-SHA384",
-          "DHE-RSA-AES128-GCM-SHA256",
-          "ECDHE-RSA-AES128-SHA256",
-          "DHE-RSA-AES128-SHA256",
-          "ECDHE-RSA-AES256-SHA384",
-          "DHE-RSA-AES256-SHA384",
-          "ECDHE-RSA-AES256-SHA256",
-          "DHE-RSA-AES256-SHA256",
-          "HIGH",
-          "!aNULL",
-          "!eNULL",
-          "!EXPORT",
-          "!DES",
-          "!RC4",
-          "!MD5",
-          "!PSK",
-          "!SRP",
-          "!CAMELLIA"
-        ].join(':'),
-        honorCipherOrder: true,
-        minVersion: 'TLSv1.2'
-      };
-
-      // Criar servidor HTTPS
-      const server = https.createServer(httpsOptions, app);
-
-      server.listen(PORT, HOST, () => {
-        console.log(`Servidor HTTPS rodando em ${HOST}:${PORT}`);
-        console.log(`API disponível em: https://${config.BASE_URL}`);
+    // Criar usuário admin
+    const User = require('./models/user.model');
+    const adminExists = await User.findOne({ where: { email: 'admin@agilsign.com' } });
+    if (!adminExists) {
+      await User.create({
+        name: 'Admin',
+        email: 'admin@agilsign.com',
+        password: process.env.ADMIN_PASSWORD || '123456',
+        role: 'admin'
       });
-
-    } catch (sslError) {
-      console.error('Erro ao configurar SSL:', sslError);
-      console.log('Iniciando servidor sem SSL...');
-      
-      // Fallback para HTTP se o SSL falhar
-      app.listen(PORT, HOST, () => {
-        console.log(`Servidor HTTP rodando em ${HOST}:${PORT}`);
-        console.log(`API disponível em: http://${config.BASE_URL}`);
-      });
+      logger.info('Usuário admin criado com sucesso.');
     }
   } catch (error) {
-    console.error('Erro ao conectar ao banco de dados:', error);
+    logger.error('Erro ao conectar com o banco de dados:', error);
     process.exit(1);
   }
 }
 
-// Tratamento de erros
+// Inicialização do servidor
+async function startServer() {
+  await initializeDatabase();
+
+  try {
+    const privateKey = fs.readFileSync(process.env.SSL_KEY_PATH, 'utf8');
+    const certificate = fs.readFileSync(process.env.SSL_CERT_PATH, 'utf8');
+    const credentials = { key: privateKey, cert: certificate };
+
+    const httpsServer = https.createServer(credentials, app);
+    httpsServer.listen(PORT, HOST, () => {
+      logger.info(`Servidor HTTPS rodando em https://${HOST}:${PORT}`);
+    });
+  } catch (error) {
+    logger.error('Erro ao iniciar servidor HTTPS:', error);
+    process.exit(1);
+  }
+}
+
+// Tratamento de erros não capturados
 process.on('uncaughtException', (error) => {
-  console.error('Erro não tratado:', error);
-  // Não encerra o processo para manter o servidor rodando
+  logger.error('Erro não tratado:', error);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Promessa rejeitada não tratada:', reason);
-  // Não encerra o processo para manter o servidor rodando
+process.on('unhandledRejection', (error) => {
+  logger.error('Promise rejection não tratada:', error);
 });
 
-// Inicia o servidor
-initializeDatabase(); 
+startServer();
