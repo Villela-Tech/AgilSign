@@ -9,7 +9,7 @@ const TermoURL: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [termo, setTermo] = useState<{ nome: string; email: string } | null>(null);
+  const [termo, setTermo] = useState<{ nome: string; email: string; urlAcesso: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -20,7 +20,8 @@ const TermoURL: React.FC = () => {
         const data = await TermoService.buscarPorId(id);
         setTermo({
           nome: data.nome,
-          email: data.email
+          email: data.email,
+          urlAcesso: data.urlAcesso
         });
       } catch (err) {
         console.error('Erro ao carregar termo:', err);
@@ -33,7 +34,7 @@ const TermoURL: React.FC = () => {
     carregarTermo();
   }, [id]);
 
-  const urlAssinatura = id ? TermoService.gerarLinkAssinatura(id) : '';
+  const urlAssinatura = termo?.urlAcesso ? TermoService.gerarLinkAssinatura(termo.urlAcesso) : '';
 
   const handleCopyUrl = async () => {
     try {

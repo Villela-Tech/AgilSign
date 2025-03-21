@@ -35,7 +35,7 @@ const Dashboard: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [selectedTermo, setSelectedTermo] = useState<TermoDetalhes | null>(null);
   const [showUrlModal, setShowUrlModal] = useState(false);
-  const [selectedTermoId, setSelectedTermoId] = useState<string | null>(null);
+  const [selectedUrlAcesso, setSelectedUrlAcesso] = useState<string | null>(null);
   const [activeMenu, setActiveMenu] = useState<string>('visaoGeral');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 4; // 4 itens por linha, 2 linhas
@@ -130,9 +130,9 @@ const Dashboard: React.FC = () => {
     navigate(`/termo/${id}`);
   };
 
-  const handleGerarLink = (e: React.MouseEvent, id: string) => {
+  const handleGerarLink = (e: React.MouseEvent, termo: TermoDetalhes) => {
     e.stopPropagation();
-    setSelectedTermoId(id);
+    setSelectedUrlAcesso(termo.urlAcesso);
     setShowUrlModal(true);
   };
 
@@ -179,9 +179,13 @@ const Dashboard: React.FC = () => {
   };
 
   const handleUrlGenerated = (url: string, id: string) => {
-    setSelectedTermoId(id);
-    setShowUrlModal(true);
-    setShowForm(false);
+    // Buscar o termo para obter o urlAcesso
+    const termo = termos.find(t => t.id === id);
+    if (termo) {
+      setSelectedUrlAcesso(termo.urlAcesso);
+      setShowUrlModal(true);
+      setShowForm(false);
+    }
   };
 
   const menuItems: MenuItem[] = [
@@ -457,7 +461,7 @@ const Dashboard: React.FC = () => {
                             <div className="termo-actions">
                               <button
                                 className="action-button link-button"
-                                onClick={(e) => handleGerarLink(e, termo.id)}
+                                onClick={(e) => handleGerarLink(e, termo)}
                                 title="Gerar Link"
                               >
                                 🔗
@@ -584,12 +588,12 @@ const Dashboard: React.FC = () => {
             </motion.div>
           </motion.div>
         )}
-        {showUrlModal && selectedTermoId && (
+        {showUrlModal && selectedUrlAcesso && (
           <UrlModal
-            termoId={selectedTermoId}
+            urlAcesso={selectedUrlAcesso}
             onClose={() => {
               setShowUrlModal(false);
-              setSelectedTermoId(null);
+              setSelectedUrlAcesso(null);
             }}
           />
         )}
@@ -598,4 +602,4 @@ const Dashboard: React.FC = () => {
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

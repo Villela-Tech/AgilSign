@@ -34,10 +34,9 @@ Termo.init(
     },
     urlAcesso: {
       type: DataTypes.STRING,
+      unique: true,
       allowNull: false,
-      defaultValue: function() {
-        return '';
-      }
+      defaultValue: () => uuidv4()
     },
     assinatura: {
       type: DataTypes.TEXT,

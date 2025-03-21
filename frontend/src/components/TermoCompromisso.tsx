@@ -86,8 +86,9 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
       const termoData = {
         nome: formData.nome.trim(),
         sobrenome: formData.sobrenome.trim(),
-        email: formData.email || 'no-email@example.com',
-        equipamento: `${formData.equipamento.trim()} (S/N: ${formData.numeroSerie.trim()})`,
+        email: formData.email.trim() || 'no-email@example.com',
+        equipamento: formData.equipamento.trim(),
+        numeroSerie: formData.numeroSerie.trim(),
         status: 'pendente' as const
       };
 
@@ -96,26 +97,25 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
       const response = await TermoService.criar(termoData);
       console.log('Resposta após criar termo:', response);
 
-      if (response && response.id) {
-        console.log('Termo criado com sucesso:', response);
-        
-        if (onUrlGenerated) {
-          onUrlGenerated(response.urlAcesso, response.id);
-        } else {
-          navigate(`/termo/${response.id}/url`);
-        }
-        
-        if (onComplete) {
-          onComplete();
-        }
+      if (!response?.id || !response?.urlAcesso) {
+        console.error('Resposta inválida do servidor:', response);
+        throw new Error('Erro ao criar termo: resposta inválida do servidor');
+      }
+
+      console.log('Termo criado com sucesso:', response);
+      
+      if (onUrlGenerated) {
+        onUrlGenerated(response.urlAcesso, response.id);
       } else {
-        console.error('Resposta inválida:', response);
-        throw new Error('Resposta inválida do servidor');
+        navigate(`/t/${response.urlAcesso}`);
+      }
+      
+      if (onComplete) {
+        onComplete();
       }
     } catch (err: any) {
       console.error('Erro completo ao criar termo:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Erro ao criar termo. Por favor, tente novamente.';
-      setError(errorMessage);
+      setError(err.message || 'Erro ao criar termo. Por favor, tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -233,4 +233,4 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
   );
 };
 
-export default TermoCompromisso; 
+export default TermoCompromisso;

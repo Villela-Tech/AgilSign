@@ -9,7 +9,6 @@
   position: relative;
 }
 
-
 .assinar-card {
   background: white;
   border-radius: 12px;
@@ -147,6 +146,18 @@
   font-size: 12px;
 }
 
+.logo-text {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #51C5EA;
+  margin-bottom: 30px;
+  background: linear-gradient(135deg, #51C5EA 0%, #3AB1D9 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
+}
+
 @media (max-width: 900px) {
   .logo-text {
     position: absolute;
@@ -170,7 +181,6 @@
     margin: 10px;
   }
 
-
   .assinar-title {
     font-size: 15px;
   }
@@ -189,7 +199,7 @@
 @media (max-width: 480px) {
   .assinar-container {
     padding: 10px;
-    padding-top:200px;
+    padding-top: 200px;
     justify-content: center;
   }
 
@@ -280,16 +290,4 @@
     margin: 0;
     padding: 0;
   }
-}
-
-.logo-text {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #51C5EA;
-  margin-bottom: 30px;
-  background: linear-gradient(135deg, #51C5EA 0%, #3AB1D9 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  letter-spacing: -0.5px;
 }

@@ -3,13 +3,13 @@ import { TermoService } from '../services/api';
 import './UrlModal.css';
 
 interface UrlModalProps {
-  termoId: string;
+  urlAcesso: string;
   onClose: () => void;
 }
 
-const UrlModal: React.FC<UrlModalProps> = ({ termoId, onClose }) => {
+const UrlModal: React.FC<UrlModalProps> = ({ urlAcesso, onClose }) => {
   const [copied, setCopied] = useState(false);
-  const url = TermoService.gerarLinkAssinatura(termoId);
+  const url = TermoService.gerarLinkAssinatura(urlAcesso);
 
   const handleCopyUrl = async () => {
     try {

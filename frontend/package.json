@@ -34,7 +34,7 @@
   },
   "scripts": {
     "start": "craco start",
-    "build": "craco build",
+    "build": "craco build && powershell Compress-Archive -Path build/* -DestinationPath build.zip -Force",
     "test": "craco test",
     "eject": "react-scripts eject"
   },

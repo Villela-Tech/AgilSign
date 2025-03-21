@@ -33,11 +33,21 @@ Termo.init(
       type: DataTypes.ENUM('pendente', 'assinado', 'cancelado'),
       defaultValue: 'pendente',
     },
+    urlAcesso: {
+      type: DataTypes.STRING,
+      unique: true,
+      field: 'url_acesso'
+    },
+    assinatura: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    }
   },
   {
     sequelize,
     tableName: 'termos',
     timestamps: true,
+    underscored: true 
   }
 );
 

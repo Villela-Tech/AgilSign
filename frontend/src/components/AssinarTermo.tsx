@@ -4,59 +4,107 @@ import SignatureCanvas from 'react-signature-canvas';
 import { TermoService, TermoDetalhes, AtualizarStatusDTO } from '../services/api';
 import './AssinarTermo.css';
 
-const AssinarTermo = () => {
-  const { id } = useParams();
+const AssinarTermo: React.FC = () => {
+  // O parâmetro está vindo como 'id' em vez de 'urlAcesso'
+  const params = useParams<{ id: string }>();
+  const urlAcesso = params.id; // Usar o id como urlAcesso
   const navigate = useNavigate();
   const signatureRef = useRef<SignatureCanvas>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [termo, setTermo] = useState<TermoDetalhes | null>(null);
-  const [signed, setSigned] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [assinatura, setAssinatura] = useState<string>('');
+
+  console.log('[AssinarTermo] Componente iniciado');
+  console.log('[AssinarTermo] params:', params);
+  console.log('[AssinarTermo] urlAcesso do params.id:', urlAcesso);
+  console.log('[AssinarTermo] Tipo do urlAcesso:', typeof urlAcesso);
+  console.log('[AssinarTermo] URL atual:', window.location.href);
 
   useEffect(() => {
     const carregarTermo = async () => {
       try {
-        if (!id) return;
-        const data = await TermoService.buscarPorId(id);
+        if (!urlAcesso) {
+          console.log('[AssinarTermo] URL de acesso não fornecido');
+          setError('URL de acesso inválida');
+          return;
+        }
+
+        console.log('[AssinarTermo] Iniciando busca do termo. URL:', urlAcesso);
+        const data = await TermoService.buscarPorUrl(urlAcesso);
+        
+        if (!data) {
+          console.log('[AssinarTermo] Nenhum dado retornado do servidor');
+          setError('Erro ao carregar termo: dados não encontrados');
+          return;
+        }
+
+        console.log('[AssinarTermo] Termo carregado com sucesso:', {
+          id: data.id,
+          nome: data.nome,
+          status: data.status
+        });
+        
         setTermo(data);
-      } catch (error) {
-        console.error('Erro ao carregar termo:', error);
-        setError('Não foi possível carregar o termo. Por favor, tente novamente.');
+      } catch (error: any) {
+        const errorMessage = error.response?.data?.message || error.message || 'Erro desconhecido';
+        console.error('[AssinarTermo] Erro ao carregar termo:', {
+          message: errorMessage,
+          status: error.response?.status,
+          url: urlAcesso
+        });
+        setError(`Erro ao carregar termo: ${errorMessage}`);
       } finally {
         setLoading(false);
       }
     };
 
+    console.log('[AssinarTermo] Componente montado. URL de acesso:', urlAcesso);
     carregarTermo();
-  }, [id]);
+  }, [urlAcesso]);
 
   const handleLimpar = () => {
     if (signatureRef.current) {
       signatureRef.current.clear();
-      setSigned(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!signatureRef.current || !termo) return;
+    console.log('[AssinarTermo] Iniciando handleSubmit');
+    console.log('[AssinarTermo] urlAcesso:', urlAcesso);
+    console.log('[AssinarTermo] assinatura:', assinatura);
 
-    if (signatureRef.current.isEmpty()) {
-      alert('Por favor, assine o documento antes de enviar.');
+    if (!signatureRef.current || signatureRef.current.isEmpty()) {
+      console.error('[AssinarTermo] Dados inválidos - assinatura vazia');
+      setError('Por favor, forneça uma assinatura válida.');
       return;
     }
 
     try {
+      if (!urlAcesso) {
+        console.error('[AssinarTermo] urlAcesso não definido');
+        setError('URL de acesso inválida');
+        return;
+      }
+
+      console.log('[AssinarTermo] Enviando assinatura para:', urlAcesso);
       const updateData: AtualizarStatusDTO = {
         status: 'assinado',
         assinatura: signatureRef.current.toDataURL()
       };
-      
-      await TermoService.atualizarStatus(termo.id, updateData);
-      navigate(`/confirmacao/${termo.id}`);
-    } catch (error) {
-      console.error('Erro ao salvar assinatura:', error);
-      setError('Erro ao salvar assinatura. Por favor, tente novamente.');
+
+      const response = await TermoService.atualizarStatus(urlAcesso, updateData);
+      console.log('[AssinarTermo] Resposta do atualizarStatus:', response);
+      if (response) {
+        alert('Termo assinado com sucesso!');
+        window.close();
+      } else {
+        setError('Erro ao salvar assinatura. Por favor, tente novamente.');
+      }
+    } catch (err) {
+      console.error('[AssinarTermo] Erro ao assinar:', err);
+      setError('Não foi possível assinar o termo. Por favor, tente novamente.');
     }
   };
 
@@ -101,7 +149,6 @@ const AssinarTermo = () => {
               width: window.innerWidth > 500 ? 500 : window.innerWidth - 40,
               height: 200
             }}
-            onEnd={() => setSigned(true)}
           />
           <div className="signature-actions">
             <button type="button" onClick={handleLimpar} className="limpar-button">
@@ -111,7 +158,6 @@ const AssinarTermo = () => {
               type="button"
               onClick={handleSubmit}
               className="assinar-button"
-              disabled={!signed}
             >
               Confirmar Assinatura
             </button>
@@ -119,9 +165,9 @@ const AssinarTermo = () => {
         </div>
       </div>
 
-      <p className="copyright">© Desenvolvido por Villela Tech</p>
+      <p className="copyright"> Desenvolvido por Villela Tech</p>
     </div>
   );
 };
 
-export default AssinarTermo; 
+export default AssinarTermo;

@@ -1,6 +1,11 @@
 const { validationResult } = require('express-validator');
+const crypto = require('crypto');
 const Termo = require('../models/termo.model');
 
+// Gerar URL de acesso única
+const gerarUrlAcesso = () => {
+  return crypto.randomBytes(32).toString('hex');
+};
 
 // Criar novo termo
 const create = async (req, res) => {
@@ -11,12 +16,15 @@ const create = async (req, res) => {
     }
 
     const { nome, sobrenome, email, equipamento, status } = req.body;
+    const urlAcesso = gerarUrlAcesso();
+
     const termo = await Termo.create({
       nome,
       sobrenome,
       email,
       equipamento,
-      status: status || 'pendente'
+      status: status || 'pendente',
+      urlAcesso
     });
 
     res.status(201).json({
@@ -54,10 +62,83 @@ const getById = async (req, res) => {
   }
 };
 
+// Buscar termo por URL de acesso
+const getByUrl = async (req, res) => {
+  console.log('Recebida requisição para buscar termo por URL de acesso');
+  console.log('URL de acesso recebida:', req.params.urlAcesso);
+  
+  try {
+    if (!req.params.urlAcesso) {
+      console.log('URL de acesso não fornecida');
+      return res.status(400).json({ message: 'URL de acesso não fornecida' });
+    }
+
+    const termo = await Termo.findOne({
+      where: { urlAcesso: req.params.urlAcesso }
+    });
+    
+    if (!termo) {
+      console.log('Termo não encontrado para a URL:', req.params.urlAcesso);
+      return res.status(404).json({ message: 'Termo não encontrado' });
+    }
+
+    console.log('Termo encontrado com sucesso:', { id: termo.id, status: termo.status });
+    res.json(termo);
+  } catch (error) {
+    console.error('Erro ao buscar termo por URL:', error);
+    res.status(500).json({ message: 'Erro ao buscar termo' });
+  }
+};
+
+// Assinar termo
+const sign = async (req, res) => {
+  console.log('Recebida requisição para assinar termo');
+  console.log('URL de acesso recebida:', req.params.urlAcesso);
+  
+  try {
+    if (!req.params.urlAcesso) {
+      console.log('URL de acesso não fornecida para assinatura');
+      return res.status(400).json({ message: 'URL de acesso não fornecida' });
+    }
+
+    const { assinatura } = req.body;
+    console.log('Buscando termo para assinatura com URL:', req.params.urlAcesso);
+
+    const termo = await Termo.findOne({
+      where: { urlAcesso: req.params.urlAcesso }
+    });
+    
+    if (!termo) {
+      console.log('Termo não encontrado para assinatura. URL:', req.params.urlAcesso);
+      return res.status(404).json({ message: 'Termo não encontrado' });
+    }
+
+    if (termo.status === 'assinado') {
+      console.log('Tentativa de assinar termo já assinado. ID:', termo.id);
+      return res.status(400).json({ message: 'Termo já foi assinado' });
+    }
+
+    console.log('Atualizando termo com assinatura. ID:', termo.id);
+    await termo.update({
+      assinatura,
+      status: 'assinado'
+    });
+
+    console.log('Termo assinado com sucesso. ID:', termo.id);
+    res.json({
+      message: 'Termo assinado com sucesso',
+      termo
+    });
+  } catch (error) {
+    console.error('Erro ao assinar termo:', error);
+    res.status(500).json({ message: 'Erro ao assinar termo' });
+  }
+};
+
 // Atualizar termo
 const update = async (req, res) => {
   try {
-    const { nome, sobrenome, email, equipamento, status } = req.body;
+    const { nome, sobrenome, email, equipamento, status, assinatura } = req.body;
     const termo = await Termo.findByPk(req.params.id);
     
     if (!termo) {
@@ -69,7 +150,8 @@ const update = async (req, res) => {
       sobrenome,
       email,
       equipamento,
-      status
+      status,
+      assinatura
     });
 
     res.json({
@@ -102,6 +184,8 @@ module.exports = {
   create,
   list,
   getById,
+  getByUrl,
+  sign,
   update,
   remove
 };

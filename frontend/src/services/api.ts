@@ -115,14 +115,18 @@ export interface AtualizarStatusDTO {
   assinatura: string;
 }
 
+interface ApiResponse {
+  message: string;
+  termo: TermoDetalhes;
+}
+
 export const TermoService = {
   // Criar novo termo
   criar: async (data: CriarTermoDTO): Promise<TermoDetalhes> => {
     try {
       console.log('Enviando dados para criar termo:', data);
-      console.log('URL da requisição:', `${API_URL}/api/termos`);
       
-      const response = await api.post<TermoDetalhes>('/termos', data);
+      const response = await api.post<ApiResponse>('/termos', data);
       
       console.log('Resposta completa do servidor:', {
         status: response.status,
@@ -134,11 +138,15 @@ export const TermoService = {
         throw new Error('Resposta do servidor não contém dados');
       }
 
-      if (!response.data.id) {
-        throw new Error('Resposta do servidor não contém ID');
+      if (!response.data.termo) {
+        throw new Error('Resposta do servidor não contém o termo');
+      }
+
+      if (!response.data.termo.id) {
+        throw new Error('Termo não contém ID');
       }
       
-      return response.data;
+      return response.data.termo;
     } catch (error: any) {
       console.error('Erro detalhado ao criar termo:', {
         message: error.message,
@@ -165,6 +173,14 @@ export const TermoService = {
     return response.data;
   },
 
+  // Buscar termo por URL de acesso
+  buscarPorUrl: async (urlAcesso: string): Promise<TermoDetalhes> => {
+    console.log('[API] buscarPorUrl - Iniciando com urlAcesso:', urlAcesso);
+    const response = await api.get<TermoDetalhes>(`/termos/acesso/${urlAcesso}`);
+    console.log('[API] buscarPorUrl - Resposta:', response.data);
+    return response.data;
+  },
+
   // Listar todos os termos
   listar: async (): Promise<TermoDetalhes[]> => {
     const response = await api.get<TermoDetalhes[]>('/termos');
@@ -172,8 +188,13 @@ export const TermoService = {
   },
 
   // Atualizar status do termo
-  atualizarStatus: async (id: string, data: AtualizarStatusDTO): Promise<TermoDetalhes> => {
-    const response = await api.patch<TermoDetalhes>(`/termos/${id}/status`, data);
+  atualizarStatus: async (urlAcesso: string, data: AtualizarStatusDTO): Promise<TermoDetalhes> => {
+    console.log('[API] atualizarStatus - Iniciando com urlAcesso:', urlAcesso);
+    console.log('[API] atualizarStatus - Dados:', data);
+    const response = await api.post<TermoDetalhes>(`/termos/assinar/${urlAcesso}`, {
+      assinatura: data.assinatura
+    });
+    console.log('[API] atualizarStatus - Resposta:', response.data);
     return response.data;
   },
 
@@ -183,8 +204,8 @@ export const TermoService = {
   },
 
   // Gerar URL de acesso para assinatura
-  gerarUrlAcesso(id: string): string {
-    return `${API_URL}/api/assinar/${id}`;
+  gerarUrlAcesso(urlAcesso: string): string {
+    return `${API_URL}/termos/assinar/${urlAcesso}`;
   },
 
   downloadPDF: async (id: string): Promise<Blob> => {
@@ -200,13 +221,17 @@ export const TermoService = {
     }
   },
 
-  gerarLinkAssinatura: (id: string): string => {
-    return `${API_URL}/api/assinar/${id}`;
+  gerarLinkAssinatura: (urlAcesso: string): string => {
+    // Usar o domínio atual do frontend
+    const baseUrl = window.location.origin;
+    console.log('[API] gerarLinkAssinatura - baseUrl:', baseUrl);
+    console.log('[API] gerarLinkAssinatura - urlAcesso:', urlAcesso);
+    return `${baseUrl}/assinar/${urlAcesso}`;
   },
 
   gerarLinkVisualizacao: (id: string): string => {
-    return `${API_URL}/api/visualizar/${id}`;
+    return `${API_URL}/termos/visualizar/${id}`;
   }
 };
 
-export default api; 
+export default api;

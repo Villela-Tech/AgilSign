@@ -12,11 +12,22 @@ const termoValidation = [
   check('status').optional().isIn(['pendente', 'assinado', 'cancelado']).withMessage('Status inválido')
 ];
 
+// Validação para assinatura
+const assinaturaValidation = [
+  check('assinatura').notEmpty().withMessage('Assinatura é obrigatória')
+];
+
 // Criar novo termo
 router.post('/', termoValidation, termoController.create);
 
 // Listar todos os termos
 router.get('/', termoController.list);
+
+// Buscar termo por URL de acesso
+router.get('/acesso/:urlAcesso', termoController.getByUrl);
+
+// Assinar termo
+router.post('/assinar/:urlAcesso', assinaturaValidation, termoController.sign);
 
 // Buscar termo por ID
 router.get('/:id', termoController.getById);

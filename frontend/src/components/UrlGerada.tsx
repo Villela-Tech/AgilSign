@@ -3,14 +3,13 @@ import { useParams } from 'react-router-dom';
 import './UrlGerada.css';
 
 interface UrlGeradaProps {
-  url: string;
+  urlAcesso: string;
   onClose: () => void;
 }
 
-const UrlGerada: React.FC<UrlGeradaProps> = ({ onClose }) => {
+const UrlGerada: React.FC<UrlGeradaProps> = ({ urlAcesso, onClose }) => {
   const [copiado, setCopiado] = useState(false);
-  const { id } = useParams<{ id: string }>();
-  const url = `${window.location.origin}/assinar/${id}`;
+  const url = `${window.location.origin}/assinar/${urlAcesso}`;
 
   console.log("URL Gerada:", url);
 
