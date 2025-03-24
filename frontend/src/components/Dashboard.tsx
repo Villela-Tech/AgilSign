@@ -38,7 +38,7 @@ const Dashboard: React.FC = () => {
   const [selectedUrlAcesso, setSelectedUrlAcesso] = useState<string | null>(null);
   const [activeMenu, setActiveMenu] = useState<string>('visaoGeral');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 4; // 4 itens por linha, 2 linhas
+  const itemsPerPage = 8; // 8 itens por linha, 2 linhas
   const maxPagesToShow = 5;
 
   useEffect(() => {
@@ -48,19 +48,34 @@ const Dashboard: React.FC = () => {
   const carregarTermos = async () => {
     try {
       const data = await TermoService.listar();
-      setTermos(Array.isArray(data) ? data : []);
+      // Converter TermoCompromisso[] para TermoDetalhes[]
+      const termosDetalhes = data.map(termo => ({
+        id: termo.id.toString(),
+        nome: termo.nome || '',
+        sobrenome: termo.sobrenome || '',
+        email: termo.email || '',
+        equipamento: termo.equipamento || '',
+        status: termo.status === 'cancelado' ? 'pendente' : termo.status || 'pendente',
+        dataCriacao: termo.created_at || new Date().toISOString(),
+        urlAcesso: termo.urlAcesso || '',
+        created_at: termo.created_at || new Date().toISOString(),
+        updated_at: termo.updated_at || new Date().toISOString()
+      }));
+      setTermos(termosDetalhes);
       setError(null);
+      return termosDetalhes;
     } catch (err) {
       console.error('Erro ao carregar termos:', err);
       setTermos([]);
       setError('Erro ao carregar os termos. Por favor, tente novamente.');
+      return [];
     } finally {
       setLoading(false);
     }
   };
 
   const calcularEstatisticas = (): DashboardStats => {
-    if (!Array.isArray(termos)) {
+    if (!Array.isArray(termos) || termos.length === 0) {
       return {
         pendentes: 0,
         assinados: 0,
@@ -113,13 +128,33 @@ const Dashboard: React.FC = () => {
   };
 
   const formatarData = (data: string) => {
-    return new Date(data).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    try {
+      // Verificar se a data é válida
+      if (!data) {
+        return 'Data não disponível';
+      }
+      
+      // Converter a string de data para objeto Date
+      const dataObj = new Date(data);
+      
+      // Verificar se a data é válida após conversão
+      if (isNaN(dataObj.getTime())) {
+        console.warn('Data inválida:', data);
+        return 'Data inválida';
+      }
+      
+      // Formatar data e hora no padrão brasileiro: dd/mm/aaaa HH:MM
+      return dataObj.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      console.error('Erro ao formatar data:', error, data);
+      return 'Data inválida';
+    }
   };
 
   const handleCriarNovoTermo = () => {
@@ -178,13 +213,48 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleUrlGenerated = (url: string, id: string) => {
-    // Buscar o termo para obter o urlAcesso
-    const termo = termos.find(t => t.id === id);
-    if (termo) {
-      setSelectedUrlAcesso(termo.urlAcesso);
+  const handleUrlGenerated = (url: string, id?: number) => {
+    console.log("handleUrlGenerated chamado com URL:", url, "ID:", id);
+    
+    // Garantir que a modal seja mostrada com a URL
+    if (url) {
+      console.log("Exibindo modal com URL fornecida:", url);
+      setSelectedUrlAcesso(url);
       setShowUrlModal(true);
       setShowForm(false);
+      carregarTermos(); // Atualiza a lista de termos após criar um novo
+      return;
+    }
+    
+    // Se não tem URL mas tem ID, buscar o termo
+    if (id) {
+      console.log("Procurando termo com ID:", id);
+      const termoStringId = id.toString();
+      const termo = termos.find(t => t.id === termoStringId);
+      
+      if (termo && termo.urlAcesso) {
+        console.log("Termo encontrado, mostrando modal com URL:", termo.urlAcesso);
+        setSelectedUrlAcesso(termo.urlAcesso);
+        setShowUrlModal(true);
+        setShowForm(false);
+      } else {
+        // Se não encontrou, tentamos buscar o termo diretamente da API
+        TermoService.buscarPorId(id)
+          .then(termoData => {
+            if (termoData && termoData.urlAcesso) {
+              console.log("Termo obtido da API, mostrando modal com URL:", termoData.urlAcesso);
+              setSelectedUrlAcesso(termoData.urlAcesso);
+              setShowUrlModal(true);
+              setShowForm(false);
+              
+              // Atualizar a lista de termos
+              carregarTermos();
+            }
+          })
+          .catch(error => {
+            console.error("Erro ao buscar termo:", error);
+          });
+      }
     }
   };
 
@@ -442,7 +512,7 @@ const Dashboard: React.FC = () => {
                       onClick={() => handleVisualizarTermo(termo.id)}
                     >
                       <div className="termo-header">
-                        <h3>{termo.nome}</h3>
+                        <h3>{`${termo.nome} ${termo.sobrenome}`}</h3>
                         <span className={`status-badge ${termo.status}`}>
                           {termo.status === 'pendente' ? 'Pendente' : 'Assinado'}
                         </span>

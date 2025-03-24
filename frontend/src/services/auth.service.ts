@@ -23,12 +23,13 @@ export const authService = {
     }
   },
 
-  async register(name: string, email: string, password: string): Promise<LoginResponse> {
+  async register(name: string, email: string, password: string, role: string = 'user'): Promise<LoginResponse> {
     try {
       const response = await api.post<LoginResponse>('/auth/register', {
         name,
         email,
         password,
+        role
       });
       return response.data;
     } catch (error: any) {

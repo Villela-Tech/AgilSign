@@ -5,27 +5,18 @@ import { TermoService, TermoDetalhes, AtualizarStatusDTO } from '../services/api
 import './AssinarTermo.css';
 
 const AssinarTermo: React.FC = () => {
-  // O parâmetro está vindo como 'id' em vez de 'urlAcesso'
   const params = useParams<{ id: string }>();
-  const urlAcesso = params.id; // Usar o id como urlAcesso
+  const urlAcesso = params.id;
   const navigate = useNavigate();
   const signatureRef = useRef<SignatureCanvas>(null);
   const [loading, setLoading] = useState(true);
   const [termo, setTermo] = useState<TermoDetalhes | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [assinatura, setAssinatura] = useState<string>('');
-
-  console.log('[AssinarTermo] Componente iniciado');
-  console.log('[AssinarTermo] params:', params);
-  console.log('[AssinarTermo] urlAcesso do params.id:', urlAcesso);
-  console.log('[AssinarTermo] Tipo do urlAcesso:', typeof urlAcesso);
-  console.log('[AssinarTermo] URL atual:', window.location.href);
 
   useEffect(() => {
     const carregarTermo = async () => {
       try {
         if (!urlAcesso) {
-          console.log('[AssinarTermo] URL de acesso não fornecido');
           setError('URL de acesso inválida');
           return;
         }
@@ -34,32 +25,29 @@ const AssinarTermo: React.FC = () => {
         const data = await TermoService.buscarPorUrl(urlAcesso);
         
         if (!data) {
-          console.log('[AssinarTermo] Nenhum dado retornado do servidor');
-          setError('Erro ao carregar termo: dados não encontrados');
+          setError('Termo não encontrado');
           return;
         }
 
-        console.log('[AssinarTermo] Termo carregado com sucesso:', {
-          id: data.id,
-          nome: data.nome,
-          status: data.status
-        });
-        
+        if (data.status === 'assinado') {
+          setError('Este termo já foi assinado');
+          return;
+        }
+
         setTermo(data);
+        setError(null);
       } catch (error: any) {
-        const errorMessage = error.response?.data?.message || error.message || 'Erro desconhecido';
-        console.error('[AssinarTermo] Erro ao carregar termo:', {
-          message: errorMessage,
-          status: error.response?.status,
-          url: urlAcesso
-        });
-        setError(`Erro ao carregar termo: ${errorMessage}`);
+        console.error('[AssinarTermo] Erro ao carregar termo:', error);
+        if (error.response?.status === 404) {
+          setError('Termo não encontrado. Verifique se a URL está correta.');
+        } else {
+          setError('Erro ao carregar termo. Por favor, tente novamente mais tarde.');
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    console.log('[AssinarTermo] Componente montado. URL de acesso:', urlAcesso);
     carregarTermo();
   }, [urlAcesso]);
 
@@ -71,40 +59,35 @@ const AssinarTermo: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('[AssinarTermo] Iniciando handleSubmit');
-    console.log('[AssinarTermo] urlAcesso:', urlAcesso);
-    console.log('[AssinarTermo] assinatura:', assinatura);
 
     if (!signatureRef.current || signatureRef.current.isEmpty()) {
-      console.error('[AssinarTermo] Dados inválidos - assinatura vazia');
       setError('Por favor, forneça uma assinatura válida.');
       return;
     }
 
     try {
       if (!urlAcesso) {
-        console.error('[AssinarTermo] urlAcesso não definido');
         setError('URL de acesso inválida');
         return;
       }
 
-      console.log('[AssinarTermo] Enviando assinatura para:', urlAcesso);
       const updateData: AtualizarStatusDTO = {
         status: 'assinado',
         assinatura: signatureRef.current.toDataURL()
       };
 
-      const response = await TermoService.atualizarStatus(urlAcesso, updateData);
-      console.log('[AssinarTermo] Resposta do atualizarStatus:', response);
-      if (response) {
-        alert('Termo assinado com sucesso!');
-        window.close();
+      await TermoService.atualizarStatus(urlAcesso, updateData);
+      alert('Termo assinado com sucesso!');
+      window.close();
+    } catch (error: any) {
+      console.error('[AssinarTermo] Erro ao assinar:', error);
+      if (error.response?.status === 404) {
+        setError('Termo não encontrado. Verifique se a URL está correta.');
+      } else if (error.response?.status === 400) {
+        setError(error.response.data.message || 'Dados inválidos para assinatura.');
       } else {
-        setError('Erro ao salvar assinatura. Por favor, tente novamente.');
+        setError('Erro ao assinar o termo. Por favor, tente novamente mais tarde.');
       }
-    } catch (err) {
-      console.error('[AssinarTermo] Erro ao assinar:', err);
-      setError('Não foi possível assinar o termo. Por favor, tente novamente.');
     }
   };
 
@@ -120,10 +103,13 @@ const AssinarTermo: React.FC = () => {
     return (
       <div className="assinar-container">
         <div className="error">
-          <p>{error || 'Termo não encontrado'}</p>
-          <button onClick={() => navigate('/')} className="voltar-button">
-            Voltar ao Início
-          </button>
+          <h1 className="logo-text">AgilSign</h1>
+          <div className="error-message">
+            <p>{error || 'Termo não encontrado'}</p>
+            <button onClick={() => window.close()} className="voltar-button">
+              Fechar
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -135,6 +121,11 @@ const AssinarTermo: React.FC = () => {
       
       <div className="assinar-card">
         <h2 className="assinar-title">Assinatura Digital</h2>
+        
+        <div className="termo-info">
+          <p><strong>Nome:</strong> {termo.nome} {termo.sobrenome}</p>
+          <p><strong>Equipamento:</strong> {termo.equipamento}</p>
+        </div>
         
         <div className="signature-instructions">
           <p>Use seu dedo ou mouse para assinar abaixo</p>
@@ -165,7 +156,7 @@ const AssinarTermo: React.FC = () => {
         </div>
       </div>
 
-      <p className="copyright"> Desenvolvido por Villela Tech</p>
+      <p className="copyright">Desenvolvido por Villela Tech</p>
     </div>
   );
 };

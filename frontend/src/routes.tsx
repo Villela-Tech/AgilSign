@@ -6,6 +6,8 @@ import TermoURL from './components/TermoURL';
 import AssinarTermo from './components/AssinarTermo';
 import VisualizarTermo from './components/VisualizarTermo';
 import Dashboard from './components/Dashboard';
+import Register from './components/Register';
+import UserManagement from './components/UserManagement';
 
 // Componente para proteger rotas que precisam de autenticação
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -29,6 +31,20 @@ export default function AppRoutes() {
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        } />
+        
+        {/* Gerenciamento de usuários */}
+        <Route path="/users" element={
+          <ProtectedRoute>
+            <UserManagement />
+          </ProtectedRoute>
+        } />
+        
+        {/* Cadastro de novos usuários */}
+        <Route path="/users/new" element={
+          <ProtectedRoute>
+            <Register />
           </ProtectedRoute>
         } />
         

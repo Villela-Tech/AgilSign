@@ -20,94 +20,74 @@ export const generateTermoRecebimento = async (data: TermoRecebimentoData) => {
   // Configurações de página
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const marginLeft = 25;
-  const marginRight = 25;
+  const marginLeft = 30;
+  const marginRight = 30;
   const contentWidth = pageWidth - marginLeft - marginRight;
-  let currentY = 30;
-
-  // Adiciona cabeçalho com logo
-  try {
-    doc.addImage('/images/logo.png', 'PNG', marginLeft, 15, 20, 20);
-  } catch (error) {
-    console.warn('Logo não encontrado:', error);
-  }
+  let currentY = 40;
 
   // Título centralizado
-  doc.setFontSize(20);
+  doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text('TERMO DE RECEBIMENTO', pageWidth / 2, currentY, { align: 'center' });
-  currentY += 25;
+  doc.text('TERMO DE RESPONSABILIDADE', pageWidth / 2, currentY, { align: 'center' });
+  currentY += 50;
 
-  // Linha decorativa
-  doc.setDrawColor(81, 197, 234); // Cor #51C5EA
-  doc.setLineWidth(0.5);
-  doc.line(marginLeft, currentY - 10, pageWidth - marginLeft, currentY - 10);
+  // Nome
+  if (data.nome || data.sobrenome) {
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text('NOME:', marginLeft, currentY);
+    const nomeCompleto = `${data.nome || ''} ${data.sobrenome || ''}`.trim();
+    const lineWidth = 145;
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.1);
+    doc.line(marginLeft + 15, currentY, marginLeft + lineWidth, currentY);
+    doc.text(nomeCompleto, marginLeft + 15, currentY - 1);
+    currentY += 35;
+  }
 
-  // Conteúdo principal
-  doc.setFontSize(12);
+  // Texto principal
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
-
-  // Texto introdutório
-  const introText = 'Pelo presente termo, declaro ter recebido o(s) equipamento(s) abaixo discriminado(s), comprometendo-me a mantê-lo(s) sob minha guarda e responsabilidade, dele(s) fazendo uso adequado, de acordo com as recomendações técnicas aplicáveis.';
+  const introText = 'Declaro estar ciente de que todos os itens especificados e entregues nesta ficha foram entregues gratuitamente para o exercício da minha função, sendo os mesmos de exclusiva propriedade da empresa, bem como a obrigatoriedade de seu uso no exercício de minhas atividades, comprometendo-me assim a respeitar e cumprir o que segue abaixo:';
   const splitIntro = doc.splitTextToSize(introText, contentWidth);
   doc.text(splitIntro, marginLeft, currentY);
-  currentY += splitIntro.length * 7 + 15;
+  currentY += splitIntro.length * 7 + 20;
 
-  // Informações do recebedor
-  doc.setFont('helvetica', 'bold');
-  doc.text('DADOS DO RECEBEDOR', marginLeft, currentY);
-  currentY += 10;
-  doc.setFont('helvetica', 'normal');
+  // Itens numerados
+  doc.text('1º - Fazer uso deste(s), abstendo-me de usá-los para fins extra-profissionais;', marginLeft, currentY);
+  currentY += 15;
+  doc.text('2º - Zelar pela boa conservação destes;', marginLeft, currentY);
+  currentY += 15;
+  doc.text('3º - A restituí-los, ou seu valor correspondente, à empresa nos seguintes casos:', marginLeft, currentY);
+  currentY += 20;
 
-  // Nome completo
-  if (data.nome || data.sobrenome) {
-    const nomeCompleto = `${data.nome || ''} ${data.sobrenome || ''}`.trim();
-    doc.text('Nome completo:', marginLeft, currentY);
-    doc.setFont('helvetica', 'bold');
-    doc.text(nomeCompleto, marginLeft + 25, currentY);
-    doc.setFont('helvetica', 'normal');
-    currentY += 10;
-  }
-
-  // Email
-  if (data.email) {
-    doc.text('E-mail:', marginLeft, currentY);
-    doc.setFont('helvetica', 'bold');
-    doc.text(data.email, marginLeft + 25, currentY);
-    doc.setFont('helvetica', 'normal');
-    currentY += 10;
-  }
+  // Subitens com bullets
+  doc.text('• Na eventualidade de me afastar do emprego definitivamente;', marginLeft + 10, currentY);
+  currentY += 15;
+  doc.text('• No caso de extravio ou quaisquer danos oriundos de mau uso ou falta de cuidado', marginLeft + 10, currentY);
+  doc.text('  para com eles;', marginLeft + 10, currentY + 7);
+  currentY += 22;
+  doc.text('• Por ocasião de troca por outros, depois de ter feito o devido uso;', marginLeft + 10, currentY);
+  currentY += 40;
 
   // Equipamento
   if (data.equipamento) {
-    currentY += 10;
-    doc.setFont('helvetica', 'bold');
-    doc.text('EQUIPAMENTO RECEBIDO', marginLeft, currentY);
-    currentY += 10;
-    doc.setFont('helvetica', 'normal');
-    
-    // Adiciona box em volta do equipamento
-    const equipHeight = 15;
-    doc.setDrawColor(200, 200, 200);
-    doc.setFillColor(248, 248, 248);
-    doc.roundedRect(marginLeft, currentY - 5, contentWidth, equipHeight, 3, 3, 'FD');
-    
-    doc.text(data.equipamento, marginLeft + 5, currentY + 5);
-    currentY += equipHeight + 10;
+    doc.text('Equipamento:', marginLeft, currentY);
+    doc.text(data.equipamento, marginLeft + 25, currentY);
+    currentY += 50;
   }
 
-  // Data e Local
-  currentY += 15;
+  // Data
   const dataAtual = data.data || new Date().toLocaleDateString('pt-BR');
-  doc.text( + dataAtual, pageWidth - marginRight - 50, currentY);
+  doc.text(dataAtual, pageWidth - marginRight - 25, currentY);
+  currentY += 30;
 
   // Área de assinatura
-  currentY += 30;
   if (data.assinatura) {
     try {
       const img = new Image();
       img.src = data.assinatura;
-      doc.addImage(img, 'PNG', marginLeft, currentY - 15, 70, 30);
+      doc.addImage(img, 'PNG', marginLeft + 25, currentY - 20, 70, 25);
     } catch (error) {
       console.warn('Erro ao adicionar assinatura:', error);
     }
@@ -115,14 +95,9 @@ export const generateTermoRecebimento = async (data: TermoRecebimentoData) => {
 
   // Linha para assinatura
   doc.setDrawColor(0);
-  doc.line(marginLeft, currentY + 5, pageWidth / 2 - 10, currentY + 5);
-  doc.setFontSize(10);
-  doc.text('Assinatura', marginLeft, currentY + 25);
-
-  // Rodapé
-  doc.setFontSize(8);
-  doc.setTextColor(128, 128, 128);
-  doc.text('© Desenvolvido por Villela Tech', pageWidth / 2, pageHeight - 10, { align: 'center' });
+  doc.setLineWidth(0.5);
+  const lineLength = 145;
+  doc.line(marginLeft + 25, currentY + 15, marginLeft + lineLength, currentY + 15);
 
   return doc;
 }; 

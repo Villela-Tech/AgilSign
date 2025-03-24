@@ -15,7 +15,7 @@ const VisualizarTermo: React.FC = () => {
     const carregarTermo = async () => {
       try {
         if (!id) return;
-        const data = await TermoService.buscarPorId(id);
+        const data = await TermoService.buscarPorId(Number(id));
         setTermo(data);
       } catch (err) {
         setError('Erro ao carregar o termo. Por favor, tente novamente.');
@@ -111,10 +111,6 @@ const VisualizarTermo: React.FC = () => {
               <div className="info-item">
                 <label>Nome:</label>
                 <p>{termo.nome} {termo.sobrenome}</p>
-              </div>
-              <div className="info-item">
-                <label>Email:</label>
-                <p>{termo.email}</p>
               </div>
             </div>
           </div>

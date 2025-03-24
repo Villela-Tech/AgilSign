@@ -88,12 +88,40 @@ app.get('/health', (req, res) => {
 // Importar rotas
 const authRoutes = require('./routes/auth.routes');
 const termoRoutes = require('./routes/termo.routes');
+const userRoutes = require('./routes/user.routes');
+
+// Middleware condicional para autenticação
+// Permite acesso público às rotas de assinatura e acesso
+const conditionalAuth = (req, res, next) => {
+  // Lista de padrões de URL que não precisam de autenticação
+  const publicUrlPatterns = [
+    /^\/api\/termos\/acesso\/.+$/,  // Rota de acesso ao termo
+    /^\/api\/termos\/assinar\/.+$/  // Rota de assinatura do termo
+  ];
+  
+  // Verificar se a URL atual corresponde a algum padrão público
+  const isPublicRoute = publicUrlPatterns.some(pattern => pattern.test(req.originalUrl));
+  
+  console.log('URL atual:', req.originalUrl);
+  console.log('É rota pública?', isPublicRoute);
+  
+  // Se for uma rota pública, pula a autenticação
+  if (isPublicRoute) {
+    return next();
+  }
+  
+  // Caso contrário, aplica o middleware de autenticação
+  return authMiddleware(req, res, next);
+};
 
 // Rotas públicas
 app.use('/api/auth', authRoutes);
 
-// Rotas protegidas
-app.use('/api/termos', authMiddleware, termoRoutes);
+// Rotas de termo com autenticação condicional
+app.use('/api/termos', conditionalAuth, termoRoutes);
+
+// Rotas de usuário com autenticação
+app.use('/api/users', authMiddleware, userRoutes);
 
 // Middleware de erro global
 app.use((err, req, res, next) => {

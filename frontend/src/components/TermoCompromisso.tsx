@@ -25,7 +25,7 @@ const initialFormData: FormData = {
 
 interface Props {
   onComplete?: () => void;
-  onUrlGenerated?: (url: string, id: string) => void;
+  onUrlGenerated?: (url: string, id?: number) => void;
 }
 
 const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
@@ -33,6 +33,7 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -74,51 +75,50 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
+    
+    if (!validateForm()) return;
+    
     setLoading(true);
-    setError(null);
-
     try {
-      const termoData = {
-        nome: formData.nome.trim(),
-        sobrenome: formData.sobrenome.trim(),
-        email: formData.email.trim() || 'no-email@example.com',
-        equipamento: formData.equipamento.trim(),
-        numeroSerie: formData.numeroSerie.trim(),
+      const formValues = { 
+        ...formData,
         status: 'pendente' as const
       };
-
-      console.log('Dados formatados para envio:', termoData);
       
-      const response = await TermoService.criar(termoData);
-      console.log('Resposta após criar termo:', response);
-
-      if (!response?.id || !response?.urlAcesso) {
-        console.error('Resposta inválida do servidor:', response);
-        throw new Error('Erro ao criar termo: resposta inválida do servidor');
-      }
-
-      console.log('Termo criado com sucesso:', response);
+      console.log("Enviando dados para criação do termo:", formValues);
+      const response = await TermoService.criar(formValues);
+      console.log("Resposta do servidor:", response);
       
-      if (onUrlGenerated) {
-        onUrlGenerated(response.urlAcesso, response.id);
-      } else {
-        navigate(`/t/${response.urlAcesso}`);
+      if (response && response.id) {
+        setSuccess("Termo de compromisso criado com sucesso!");
+        
+        // Sinalizar que a lista de termos deve ser atualizada
+        localStorage.setItem('termos_updated', 'true');
+        
+        // Garantir que a modal seja exibida imediatamente após criar o termo
+        if (onUrlGenerated && response.urlAcesso) {
+          console.log("Chamando onUrlGenerated com URL:", response.urlAcesso, "ID:", response.id);
+          onUrlGenerated(response.urlAcesso, response.id);
+        }
+        
+        if (onComplete) {
+          onComplete();
+        }
+        
+        resetForm();
       }
-      
-      if (onComplete) {
-        onComplete();
-      }
-    } catch (err: any) {
-      console.error('Erro completo ao criar termo:', err);
-      setError(err.message || 'Erro ao criar termo. Por favor, tente novamente.');
+    } catch (error) {
+      console.error("Erro ao criar termo:", error);
+      setError("Ocorreu um erro ao criar o termo de compromisso. Por favor, tente novamente.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const resetForm = () => {
+    setFormData(initialFormData);
+    setError(null);
+    setSuccess(null);
   };
 
   return (
@@ -129,6 +129,12 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
         {error && (
           <div className="error-message">
             {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="success-message">
+            {success}
           </div>
         )}
 

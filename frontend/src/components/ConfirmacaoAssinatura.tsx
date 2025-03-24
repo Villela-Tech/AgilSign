@@ -14,7 +14,7 @@ const ConfirmacaoAssinatura: React.FC = () => {
     const carregarTermo = async () => {
       try {
         if (!id) return;
-        const data = await TermoService.buscarPorId(id);
+        const data = await TermoService.buscarPorId(Number(id));
         
         if (data.status !== 'assinado') {
           setError('Este termo ainda não foi assinado.');

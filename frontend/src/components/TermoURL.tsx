@@ -17,7 +17,7 @@ const TermoURL: React.FC = () => {
       if (!id) return;
       
       try {
-        const data = await TermoService.buscarPorId(id);
+        const data = await TermoService.buscarPorId(Number(id));
         setTermo({
           nome: data.nome,
           email: data.email,
