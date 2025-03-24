@@ -203,6 +203,8 @@ const Dashboard: React.FC = () => {
 
     if (menuId === 'criarTermo') {
       setShowForm(true);
+    } else if (menuId === 'usuarios') {
+      navigate('/users');
     } else {
       setShowForm(false);
       if (menuId === 'visaoGeral') {
@@ -278,14 +280,14 @@ const Dashboard: React.FC = () => {
       onClick: () => handleMenuClick('termosPendentes')
     },
     {
-      text: 'Relatórios',
+      text: 'Administrador',
       type: 'section'
     },
     {
-      icon: '📈',
-      text: 'Estatísticas',
-      isActive: activeMenu === 'estatisticas',
-      onClick: () => handleMenuClick('estatisticas')
+      icon: '👥',
+      text: 'Usuários',
+      isActive: activeMenu === 'usuarios',
+      onClick: () => handleMenuClick('usuarios')
     }
   ];
 
