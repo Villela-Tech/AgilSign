@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SignatureCanvas from 'react-signature-canvas';
-import { TermoService, TermoDetalhes, AtualizarStatusDTO } from '../services/api';
+import { TermoService, TermoDetalhes, AtualizarStatusDTO } from '../../services/api';
 import './AssinarTermo.css';
 
 const AssinarTermo: React.FC = () => {

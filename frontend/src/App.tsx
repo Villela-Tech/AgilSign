@@ -1,14 +1,15 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import AnimatedLayout from './components/AnimatedLayout';
-import Dashboard from './components/Dashboard';
-import Login from './components/Login';
-import TermoCompromisso from './components/TermoCompromisso';
-import TermoURL from './components/TermoURL';
-import AssinarTermo from './components/AssinarTermo';
-import VisualizarTermo from './components/VisualizarTermo';
-import ConfirmacaoAssinatura from './components/ConfirmacaoAssinatura';
+import AnimatedLayout from './components/AnimatedLayout/AnimatedLayout';
+import Dashboard from './components/Dashboard/Dashboard';
+import Login from './components/Login/Login';
+import TermoCompromisso from './components/TermoCompromisso/TermoCompromisso';
+import TermoURL from './components/TermoURL/TermoURL';
+import AssinarTermo from './components/AssinarTermo/AssinarTermo';
+import VisualizarTermo from './components/VisualizarTermo/VisualizarTermo';
+import ConfirmacaoAssinatura from './components/ConfirmacaoAssinatura/ConfirmacaoAssinatura';
+import EditarTermo from './components/EditarTermo/EditarTermo';
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -29,6 +30,11 @@ const AnimatedRoutes = () => {
         <Route path="/termo/novo" element={
           <AnimatedLayout>
             <TermoCompromisso />
+          </AnimatedLayout>
+        } />
+        <Route path="/termo/editar/:id" element={
+          <AnimatedLayout>
+            <EditarTermo />
           </AnimatedLayout>
         } />
         <Route path="/termo/:id/url" element={

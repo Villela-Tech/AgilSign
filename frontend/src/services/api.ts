@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { generateTermoRecebimento } from './pdfService';
 
 export const API_URL = 'https://apiagilsign.villelatech.com.br';
 
@@ -90,6 +91,7 @@ export interface TermoData {
   data: string;
   urlAcesso?: string;
   assinatura?: string;
+  patrimonio?: string;
 }
 
 export interface TermoResponse {
@@ -109,6 +111,7 @@ export interface TermoDetalhes {
   assinatura?: string;
   created_at: string;
   updated_at: string;
+  patrimonio?: string;
 }
 
 export interface TermoCompromisso {
@@ -125,6 +128,7 @@ export interface TermoCompromisso {
   urlDocumento?: string;
   created_at: string;
   updated_at: string;
+  patrimonio?: string;
 }
 
 export interface CriarTermoDTO {
@@ -136,6 +140,7 @@ export interface CriarTermoDTO {
   numeroSerie: string;
   data: string;
   status: 'pendente';
+  patrimonio?: string;
 }
 
 export interface AtualizarStatusDTO {
@@ -161,6 +166,11 @@ export const TermoService = {
 
   criar: async (termo: any): Promise<any> => {
     const response = await api.post<any>('/termos', termo);
+    return response.data;
+  },
+
+  atualizar: async (id: number, termo: any): Promise<any> => {
+    const response = await api.put<any>(`/termos/${id}`, termo);
     return response.data;
   },
 

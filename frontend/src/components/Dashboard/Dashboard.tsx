@@ -1,10 +1,64 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TermoService, TermoDetalhes } from '../services/api';
-import TermoCompromisso from './TermoCompromisso';
-import UrlModal from './UrlModal';
+import Lottie from 'lottie-react';
+import { TermoService, TermoDetalhes } from '../../services/api';
+import TermoCompromisso from '../TermoCompromisso/TermoCompromisso';
+import UrlModal from '../UrlModal/UrlModal';
+import Sidebar from '../Sidebar/Sidebar';
+import loadingAnimation from '../../assets/Animations/loading.json';
 import './Dashboard.css';
+
+// Adicionando estilos inline para o botão de editar
+const additionalStyles = `
+  .editar-button {
+    background: transparent;
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+  }
+
+  .editar-button:hover {
+    background: rgba(16, 185, 129, 0.08);
+    border-color: #10b981;
+  }
+
+  .edit-icon {
+    font-size: 14px;
+    animation: bounce 1.5s infinite;
+  }
+
+  @keyframes bounce {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-3px);
+    }
+  }
+
+  .action-button.edit-button {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+  }
+  
+  .action-button.edit-button:hover {
+    background-color: rgba(16, 185, 129, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(16, 185, 129, 0.3);
+  }
+`;
 
 interface DashboardStats {
   pendentes: number;
@@ -18,7 +72,7 @@ interface MenuItem {
   text: string;
   path?: string;
   isActive?: boolean;
-  type?: 'section';
+  type?: 'section' | undefined;
   onClick?: () => void;
 }
 
@@ -40,6 +94,9 @@ const Dashboard: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8; // 8 itens por linha, 2 linhas
   const maxPagesToShow = 5;
+
+  // Define isAdmin to check for admin role
+  const isAdmin = true; // Replace with actual admin check
 
   useEffect(() => {
     carregarTermos();
@@ -161,8 +218,8 @@ const Dashboard: React.FC = () => {
     navigate('/termo/novo');
   };
 
-  const handleVisualizarTermo = (id: string) => {
-    navigate(`/termo/${id}`);
+  const handleVisualizarTermo = (id: string, status: string) => {
+    navigate(`/visualizar/${id}`);
   };
 
   const handleGerarLink = (e: React.MouseEvent, termo: TermoDetalhes) => {
@@ -260,6 +317,21 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleEditarTermo = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    console.log("Redirecionando para edição do termo ID:", id);
+    
+    // Adicionar uma classe temporária ao botão para animar
+    const button = e.currentTarget as HTMLElement;
+    button.classList.add('edit-button-clicked');
+    
+    // Pequeno delay para permitir a animação antes do redirecionamento
+    setTimeout(() => {
+      navigate(`/termo/editar/${id}`);
+    }, 150);
+  };
+
+  // Update menuItems to conditionally include 'Usuários'
   const menuItems: MenuItem[] = [
     {
       icon: '📊',
@@ -279,17 +351,17 @@ const Dashboard: React.FC = () => {
       isActive: activeMenu === 'termosPendentes',
       onClick: () => handleMenuClick('termosPendentes')
     },
-    {
+    isAdmin && {
       text: 'Administrador',
-      type: 'section'
+      type: 'section' as const
     },
-    {
+    isAdmin && {
       icon: '👥',
       text: 'Usuários',
       isActive: activeMenu === 'usuarios',
       onClick: () => handleMenuClick('usuarios')
     }
-  ];
+  ].filter(Boolean); // Filter out false values
 
   const riskMetrics = [
     {
@@ -353,36 +425,14 @@ const Dashboard: React.FC = () => {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
       >
-        <div className="sidebar">
-          <div className="sidebar-header">
-            <h1 className="sidebar-title">AgilSign</h1>
-            <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>
-              <span>☰</span>
-            </button>
-          </div>
-          <nav className={`sidebar-nav ${menuOpen ? 'open' : ''}`}>
-            {menuItems.map((item, index) => (
-              item.type === 'section' ? (
-                <div key={index} className="nav-section">
-                  {item.text}
-                </div>
-              ) : (
-                <button
-                  key={index}
-                  onClick={() => item.onClick ? item.onClick() : item.path && navigate(item.path)}
-                  className={`nav-item ${item.isActive ? 'active' : ''}`}
-                >
-                  {item.icon && <span className="nav-icon">{item.icon}</span>}
-                  <span className="nav-text">{item.text}</span>
-                </button>
-              )
-            ))}
-          </nav>
-        </div>
+        <Sidebar />
         <div className="main-content">
           <div className="dashboard-loading">
-            <div className="loading-spinner"></div>
-            <p>Carregando termos...</p>
+            <Lottie
+              animationData={loadingAnimation}
+              loop={true}
+              style={{ width: 400, height: 400 }}
+            />
           </div>
         </div>
       </motion.div>
@@ -391,32 +441,8 @@ const Dashboard: React.FC = () => {
 
   return (
     <motion.div className="app-container" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-      <div className="sidebar">
-        <div className="sidebar-header">
-          <h1 className="sidebar-title">AgilSign</h1>
-          <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>
-            <span>☰</span>
-          </button>
-        </div>
-        <nav className={`sidebar-nav ${menuOpen ? 'open' : ''}`}>
-          {menuItems.map((item, index) => (
-            item.type === 'section' ? (
-              <div key={index} className="nav-section">
-                {item.text}
-              </div>
-            ) : (
-              <button
-                key={index}
-                onClick={() => item.onClick && item.onClick()}
-                className={`nav-item ${item.isActive ? 'active' : ''}`}
-              >
-                {item.icon && <span className="nav-icon">{item.icon}</span>}
-                <span className="nav-text">{item.text}</span>
-              </button>
-            )
-          ))}
-        </nav>
-      </div>
+      <style>{additionalStyles}</style>
+      <Sidebar />
 
       <div className="main-content">
         {showForm ? (
@@ -511,7 +537,7 @@ const Dashboard: React.FC = () => {
                         scale: 1.02,
                         transition: { type: "spring", stiffness: 400, damping: 10 }
                       }}
-                      onClick={() => handleVisualizarTermo(termo.id)}
+                      onClick={() => handleVisualizarTermo(termo.id, termo.status)}
                     >
                       <div className="termo-header">
                         <h3>{`${termo.nome} ${termo.sobrenome}`}</h3>
@@ -537,6 +563,13 @@ const Dashboard: React.FC = () => {
                                 title="Gerar Link"
                               >
                                 🔗
+                              </button>
+                              <button
+                                className="action-button edit-button"
+                                onClick={(e) => handleEditarTermo(e, termo.id)}
+                                title="Editar Termo"
+                              >
+                                ✏️
                               </button>
                               <button
                                 className="action-button delete-button"

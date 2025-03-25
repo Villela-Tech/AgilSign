@@ -239,4 +239,19 @@
   .register-button {
     font-size: 15px;
   }
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100%;
+}
+
+.loading-container p {
+  margin-top: 16px;
+  font-size: 18px;
+  color: #666;
 } 

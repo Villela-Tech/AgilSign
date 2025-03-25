@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { TermoService } from '../services/api';
-import logo from '../assets/images/Logo.png';
+import { TermoService } from '../../services/api';
+import logo from '../../assets/images/Logo.png';
 import './TermoURL.css';
+import Sidebar from '../Sidebar/Sidebar';
 
 const TermoURL: React.FC = () => {
   const { id } = useParams<{ id: string }>();

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { TermoService, TermoDetalhes } from '../services/api';
+import { TermoService, TermoDetalhes } from '../../services/api';
 import './ConfirmacaoAssinatura.css';
 
 const ConfirmacaoAssinatura: React.FC = () => {

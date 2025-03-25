@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TermoService } from '../services/api';
+import { TermoService } from '../../services/api';
 import './UrlModal.css';
 
 interface UrlModalProps {

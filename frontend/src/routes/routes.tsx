@@ -1,13 +1,14 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './components/Login';
-import TermoCompromisso from './components/TermoCompromisso';
-import TermoURL from './components/TermoURL';
-import AssinarTermo from './components/AssinarTermo';
-import VisualizarTermo from './components/VisualizarTermo';
-import Dashboard from './components/Dashboard';
-import Register from './components/Register';
-import UserManagement from './components/UserManagement';
+import Login from '../components/Login/Login';
+import TermoCompromisso from '../components/TermoCompromisso/TermoCompromisso';
+import TermoURL from '../components/TermoURL/TermoURL';
+import AssinarTermo from '../components/AssinarTermo/AssinarTermo';
+import VisualizarTermo from '../components/VisualizarTermo/VisualizarTermo';
+import Dashboard from '../components/Dashboard/Dashboard';
+import Register from '../components/Register/Register';
+import UserManagement from '../components/UserManagement/UserManagement';
+import EditarTermo from '../components/EditarTermo/EditarTermo';
 
 // Componente para proteger rotas que precisam de autenticação
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -52,6 +53,13 @@ export default function AppRoutes() {
         <Route path="/termo/novo" element={
           <ProtectedRoute>
             <TermoCompromisso />
+          </ProtectedRoute>
+        } />
+
+        {/* Editar termo existente */}
+        <Route path="/termo/editar/:id" element={
+          <ProtectedRoute>
+            <EditarTermo />
           </ProtectedRoute>
         } />
 

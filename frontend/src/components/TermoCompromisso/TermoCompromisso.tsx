@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TermoService } from '../services/api';
+import { TermoService } from '../../services/api';
 import './TermoCompromisso.css';
+import Sidebar from '../Sidebar/Sidebar';
+import Lottie from 'lottie-react';
+import loadingAnimation from '../../assets/Animations/loading.json';
 
 interface FormData {
   nome: string;
@@ -11,6 +14,7 @@ interface FormData {
   equipe: string;
   numeroSerie: string;
   data: string;
+  patrimonio?: string;
 }
 
 const initialFormData: FormData = {
@@ -20,7 +24,8 @@ const initialFormData: FormData = {
   equipamento: '',
   equipe: '',
   numeroSerie: '',
-  data: ''
+  data: '',
+  patrimonio: ''
 };
 
 interface Props {
@@ -34,6 +39,7 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showPatrimonio, setShowPatrimonio] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -123,6 +129,7 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
 
   return (
     <div className="termo-container">
+      <Sidebar />
       <div className="termo-form">
         <h2 className="termo-title">DADOS PESSOAIS</h2>
 
@@ -210,6 +217,33 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
                 placeholder="Ex: Desenvolvimento"
               />
             </div>
+          </div>
+
+          <div className="form-group patrimonio-container">
+            <div className="patrimonio-header">
+              <button 
+                type="button" 
+                className="add-patrimonio-btn"
+                onClick={() => setShowPatrimonio(!showPatrimonio)}
+                disabled={loading}
+              >
+                {showPatrimonio ? '−' : '+'}
+              </button>
+              <label htmlFor="patrimonio">Patrimônio (opcional)</label>
+            </div>
+            
+            {showPatrimonio && (
+              <input
+                type="text"
+                id="patrimonio"
+                name="patrimonio"
+                value={formData.patrimonio || ''}
+                onChange={handleChange}
+                disabled={loading}
+                placeholder="Ex: PAT-123456"
+                className="patrimonio-input"
+              />
+            )}
           </div>   
 
           <div className="form-group">
@@ -231,7 +265,14 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
             className="submit-button"
             disabled={loading}
           >
-            {loading ? 'Processando...' : 'Gerar URL'}
+            {loading ? (
+              <Lottie
+                animationData={loadingAnimation}
+                style={{ width: 30, height: 30 }}
+              />
+            ) : (
+              'Gerar URL'
+            )}
           </button>
         </form>
       </div>

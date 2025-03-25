@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '../services/auth.service';
+import { authService } from '../../services/auth.service';
 import './Register.css';
+import Lottie from 'lottie-react';
+import loadingAnimation from '../../assets/Animations/loading.json';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [checkingPermissions, setCheckingPermissions] = useState(true);
 
   useEffect(() => {
     // Verificar se o usuário está autenticado
@@ -41,6 +44,7 @@ const Register = () => {
       // Se não estiver autenticado, redirecionar para login
       navigate('/');
     }
+    setCheckingPermissions(false);
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,9 +102,30 @@ const Register = () => {
     }
   };
 
+  // Se estiver verificando permissões, mostrar animação de loading
+  if (checkingPermissions) {
+    return (
+      <div className="loading-container">
+        <Lottie
+          animationData={loadingAnimation}
+          style={{ width: 150, height: 150 }}
+        />
+        <p>Verificando permissões...</p>
+      </div>
+    );
+  }
+
   // Se não for um administrador, não renderizar nada (redirecionamento é feito no useEffect)
   if (!isAdmin) {
-    return <div className="loading-container">Verificando permissões...</div>;
+    return (
+      <div className="loading-container">
+        <Lottie
+          animationData={loadingAnimation}
+          style={{ width: 150, height: 150 }}
+        />
+        <p>Verificando permissões...</p>
+      </div>
+    );
   }
 
   return (
@@ -210,27 +235,33 @@ const Register = () => {
             </div>
           </div>
 
-          <button type="submit" className="register-button" disabled={loading}>
-            {loading ? 'Processando...' : 'Cadastrar Usuário'}
-          </button>
+          <div className="action-buttons">
+            <button type="submit" className="register-button" disabled={loading}>
+              {loading ? (
+                <Lottie
+                  animationData={loadingAnimation}
+                  style={{ width: 30, height: 30 }}
+                />
+              ) : (
+                'Cadastrar Usuário'
+              )}
+            </button>
+            
+            <button
+              className="back-button"
+              onClick={() => {
+                // Prevenir a navegação durante o carregamento
+                if (!loading) {
+                  navigate('/dashboard');
+                }
+              }}
+              disabled={loading}
+              type="button"
+            >
+              Voltar
+            </button>
+          </div>
         </form>
-
-        <div className="back-link">
-          <button 
-            className="back-button" 
-            onClick={() => {
-              // Verifica a rota anterior para decidir para onde voltar
-              if (window.location.pathname === '/users/new') {
-                navigate('/users');
-              } else {
-                navigate('/dashboard');
-              }
-            }}
-            disabled={loading}
-          >
-            Voltar
-          </button>
-        </div>
       </div>
     </div>
   );
