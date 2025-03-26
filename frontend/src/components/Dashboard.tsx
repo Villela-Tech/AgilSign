@@ -594,12 +594,8 @@ const Dashboard: React.FC = () => {
                           </>
                         ) : (
                           <div className="termo-actions">
-                            <button
-                              className="action-button link-button"
-                              onClick={(e) => handleGerarLink(e, termo)}
-                              title="Gerar Link"
-                            >
-                              🔗
+                            <button className="visualizar-button full-width">
+                              Visualizar
                             </button>
                           </div>
                         )}

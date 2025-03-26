@@ -108,7 +108,7 @@ const VisualizarTermo: React.FC = () => {
   const handleEditar = () => {
     setEditLoading(true);
     setTimeout(() => {
-      navigate(`/termo/${id}/editar`);
+      navigate(`/termo/editar/${id}`);
     }, 500);
   };
 
@@ -118,7 +118,7 @@ const VisualizarTermo: React.FC = () => {
       setTimeout(() => {
         setShowUrlModal(true);
         setShowLinkLoading(false);
-      }, 300);
+      }, 500);
     }
   };
 
@@ -214,7 +214,7 @@ const VisualizarTermo: React.FC = () => {
               <button 
                 className="button custom-download-button" 
                 onClick={handleBaixarPDF}
-                disabled={downloadLoading || isPendente}
+                disabled={downloadLoading}
               >
                 {downloadLoading ? (
                   <span>Baixando...</span>
@@ -373,7 +373,6 @@ const VisualizarTermo: React.FC = () => {
         </div>
       </div>
 
-      {/* Usar o componente UrlModal */}
       {showUrlModal && termo && termo.urlAcesso && (
         <UrlModal 
           urlAcesso={termo.urlAcesso}
