@@ -29,6 +29,21 @@ Termo.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    numeroSerie: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: 'numeroSerie'
+    },
+    patrimonio: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: 'patrimonio'
+    },
+    responsavelId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: 'responsavelId'
+    },
     status: {
       type: DataTypes.ENUM('pendente', 'assinado', 'cancelado'),
       defaultValue: 'pendente',

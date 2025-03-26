@@ -15,16 +15,51 @@ const create = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { nome, sobrenome, email, equipamento, status } = req.body;
+    // Log completo dos dados recebidos para debug
+    console.log("[DEBUG] Dados completos recebidos:", JSON.stringify(req.body, null, 2));
+
+    const { 
+      nome, 
+      sobrenome, 
+      email, 
+      equipamento, 
+      numeroSerie, 
+      patrimonio, 
+      responsavelId,
+      status 
+    } = req.body;
+    
+    // Verificar campos recebidos
+    console.log("[DEBUG] Campos extraídos:", {
+      nome, sobrenome, email, equipamento, 
+      numeroSerie, patrimonio, responsavelId, status
+    });
+    
     const urlAcesso = gerarUrlAcesso();
 
-    const termo = await Termo.create({
+    // Criar objeto com os dados essenciais, omitindo campos potencialmente problemáticos
+    const termoData = {
       nome,
       sobrenome,
       email,
       equipamento,
+      numeroSerie: numeroSerie || null,
+      patrimonio: patrimonio || null,
+      responsavelId: responsavelId || null,
       status: status || 'pendente',
       urlAcesso
+    };
+
+    console.log("[DEBUG] Objeto enviado para o create:", termoData);
+
+    const termo = await Termo.create(termoData);
+
+    console.log("Termo criado com sucesso:", {
+      id: termo.id,
+      nome: termo.nome,
+      numeroSerie: termo.numeroSerie,
+      patrimonio: termo.patrimonio,
+      responsavelId: termo.responsavelId
     });
 
     res.status(201).json({
@@ -198,6 +233,8 @@ const downloadPDF = async (req, res) => {
       id: termo.id,
       nome: termo.nome,
       sobrenome: termo.sobrenome,
+      numeroSerie: termo.numeroSerie,
+      patrimonio: termo.patrimonio,
       status: termo.status,
       temAssinatura: !!termo.assinatura
     });
@@ -222,6 +259,22 @@ const downloadPDF = async (req, res) => {
     doc.moveDown();
     doc.text(`Equipamento: ${termo.equipamento}`);
     doc.moveDown();
+    
+    if (termo.numeroSerie) {
+      doc.text(`Número de Série: ${termo.numeroSerie}`);
+      doc.moveDown();
+    }
+    
+    if (termo.patrimonio) {
+      doc.text(`Patrimônio: ${termo.patrimonio}`);
+      doc.moveDown();
+    }
+    
+    if (termo.responsavelId) {
+      doc.text(`Responsável: ${termo.responsavelId}`);
+      doc.moveDown();
+    }
+    
     doc.text(`Status: ${termo.status}`);
     
     if (termo.assinatura) {
