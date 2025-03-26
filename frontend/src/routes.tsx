@@ -8,6 +8,7 @@ import VisualizarTermo from './components/VisualizarTermo';
 import Dashboard from './components/Dashboard';
 import Register from './components/Register';
 import UserManagement from './components/UserManagement';
+import EditarTermo from './components/EditarTermo';
 
 // Componente para proteger rotas que precisam de autenticação
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -52,6 +53,13 @@ export default function AppRoutes() {
         <Route path="/termo/novo" element={
           <ProtectedRoute>
             <TermoCompromisso />
+          </ProtectedRoute>
+        } />
+
+        {/* Editar termo existente */}
+        <Route path="/termo/:id/editar" element={
+          <ProtectedRoute>
+            <EditarTermo />
           </ProtectedRoute>
         } />
 

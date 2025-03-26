@@ -103,28 +103,36 @@ export interface TermoDetalhes {
   sobrenome: string;
   email: string;
   equipamento: string;
+  numeroSerie?: string;
+  patrimonio?: string;
   status: 'pendente' | 'assinado';
-  dataCriacao: string;
-  urlAcesso: string;
   assinatura?: string;
-  created_at: string;
-  updated_at: string;
+  urlAcesso: string;
+  dataCriacao: string;
+  dataAtualizacao: string;
+  createdAt?: string;
+  updatedAt?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface TermoCompromisso {
-  id: number;
+  id: string;
   nome: string;
   sobrenome: string;
   email: string;
   equipamento: string;
-  equipe?: string;
   numeroSerie?: string;
-  data?: string;
-  status: 'pendente' | 'assinado' | 'cancelado';
-  urlAcesso?: string;
-  urlDocumento?: string;
-  created_at: string;
-  updated_at: string;
+  patrimonio?: string;
+  status: 'pendente' | 'assinado';
+  assinatura?: string;
+  urlAcesso: string;
+  dataCriacao: string;
+  dataAtualizacao: string;
+  createdAt?: string;
+  updatedAt?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface CriarTermoDTO {
@@ -132,9 +140,9 @@ export interface CriarTermoDTO {
   sobrenome: string;
   email: string;
   equipamento: string;
-  equipe: string;
   numeroSerie: string;
-  data: string;
+  patrimonio: string;
+  responsavelId: string;
   status: 'pendente';
 }
 
@@ -161,6 +169,11 @@ export const TermoService = {
 
   criar: async (termo: any): Promise<any> => {
     const response = await api.post<any>('/termos', termo);
+    return response.data;
+  },
+
+  atualizar: async (id: string | number, termo: any): Promise<any> => {
+    const response = await api.put<any>(`/termos/${id}`, termo);
     return response.data;
   },
 

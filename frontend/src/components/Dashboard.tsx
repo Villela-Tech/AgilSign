@@ -30,6 +30,7 @@ const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'todos' | 'pendente' | 'assinado'>('todos');
+  const [sortOrder, setSortOrder] = useState<'recentes' | 'antigos' | 'alfabetico'>('recentes');
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -49,18 +50,31 @@ const Dashboard: React.FC = () => {
     try {
       const data = await TermoService.listar();
       // Converter TermoCompromisso[] para TermoDetalhes[]
-      const termosDetalhes = data.map(termo => ({
-        id: termo.id.toString(),
-        nome: termo.nome || '',
-        sobrenome: termo.sobrenome || '',
-        email: termo.email || '',
-        equipamento: termo.equipamento || '',
-        status: termo.status === 'cancelado' ? 'pendente' : termo.status || 'pendente',
-        dataCriacao: termo.created_at || new Date().toISOString(),
-        urlAcesso: termo.urlAcesso || '',
-        created_at: termo.created_at || new Date().toISOString(),
-        updated_at: termo.updated_at || new Date().toISOString()
-      }));
+      const termosDetalhes = data.map(termo => {
+        // Verificar quais campos estão disponíveis na resposta da API
+        console.log('Termo recebido da API:', termo);
+        
+        return {
+          id: termo.id?.toString() || '',
+          nome: termo.nome || '',
+          sobrenome: termo.sobrenome || '',
+          email: termo.email || '',
+          equipamento: termo.equipamento || '',
+          numeroSerie: termo.numeroSerie || '',
+          patrimonio: termo.patrimonio || '',
+          status: (termo.status === 'pendente' || termo.status === 'assinado') ? termo.status : 'pendente',
+          dataCriacao: termo.created_at || termo.dataCriacao || termo.createdAt || '',
+          urlAcesso: termo.urlAcesso || '',
+          assinatura: termo.assinatura,
+          dataAtualizacao: termo.updated_at || termo.dataAtualizacao || termo.updatedAt || '',
+          // Campos adicionais para compatibilidade
+          createdAt: termo.created_at || termo.createdAt || '',
+          updatedAt: termo.updated_at || termo.updatedAt || '',
+          created_at: termo.created_at || '',
+          updated_at: termo.updated_at || ''
+        };
+      });
+      
       setTermos(termosDetalhes);
       setError(null);
       return termosDetalhes;
@@ -100,13 +114,28 @@ const Dashboard: React.FC = () => {
   const filteredTermos = Array.isArray(termos) ? termos.filter(termo => {
     const matchesSearch = (
       termo.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      termo.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      termo.equipamento.toLowerCase().includes(searchTerm.toLowerCase())
+      termo.sobrenome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      termo.equipamento.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (termo.numeroSerie && termo.numeroSerie.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     const matchesStatus = filterStatus === 'todos' || termo.status === filterStatus;
 
     return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    // Ordenação dos termos
+    switch (sortOrder) {
+      case 'recentes':
+        return new Date(b.created_at || b.createdAt || b.dataCriacao || 0).getTime() - 
+               new Date(a.created_at || a.createdAt || a.dataCriacao || 0).getTime();
+      case 'antigos':
+        return new Date(a.created_at || a.createdAt || a.dataCriacao || 0).getTime() - 
+               new Date(b.created_at || b.createdAt || b.dataCriacao || 0).getTime();
+      case 'alfabetico':
+        return a.nome.localeCompare(b.nome);
+      default:
+        return 0;
+    }
   }) : [];
   
   // Cálculo para paginação
@@ -143,7 +172,7 @@ const Dashboard: React.FC = () => {
         return 'Data inválida';
       }
       
-      // Formatar data e hora no padrão brasileiro: dd/mm/aaaa HH:MM
+      // Formatar a data com hora no padrão brasileiro: dd/mm/aaaa HH:MM
       return dataObj.toLocaleString('pt-BR', {
         day: '2-digit',
         month: '2-digit',
@@ -258,6 +287,11 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleEditarTermo = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    navigate(`/termo/${id}/editar`);
+  };
+
   const menuItems: MenuItem[] = [
     {
       icon: '📊',
@@ -277,16 +311,7 @@ const Dashboard: React.FC = () => {
       isActive: activeMenu === 'termosPendentes',
       onClick: () => handleMenuClick('termosPendentes')
     },
-    {
-      text: 'Relatórios',
-      type: 'section'
-    },
-    {
-      icon: '📈',
-      text: 'Estatísticas',
-      isActive: activeMenu === 'estatisticas',
-      onClick: () => handleMenuClick('estatisticas')
-    }
+   
   ];
 
   const riskMetrics = [
@@ -434,7 +459,7 @@ const Dashboard: React.FC = () => {
                   <input
                     type="text"
                     className="global-search"
-                    placeholder="Buscar termos..."
+                    placeholder="Buscar por nome, nº série ou equipamento..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -447,6 +472,15 @@ const Dashboard: React.FC = () => {
                   <option value="todos">Todos os Status</option>
                   <option value="pendente">Pendentes</option>
                   <option value="assinado">Assinados</option>
+                </select>
+                <select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value as 'recentes' | 'antigos' | 'alfabetico')}
+                  className="order-filter"
+                >
+                  <option value="recentes">Mais recentes</option>
+                  <option value="antigos">Mais antigos</option>
+                  <option value="alfabetico">Ordem alfabética</option>
                 </select>
               </div>
             </div>
@@ -522,7 +556,10 @@ const Dashboard: React.FC = () => {
                           <strong>Equipamento:</strong> {termo.equipamento}
                         </p>
                         <p>
-                          <strong>Data:</strong> {formatarData(termo.dataCriacao)}
+                          <strong>Nº Série:</strong> {termo.numeroSerie || "Não informado"}
+                        </p>
+                        <p>
+                          <strong>Data:</strong> {formatarData(termo.created_at || termo.createdAt || termo.dataCriacao)}
                         </p>
                       </div>
                       <div className="termo-footer">
@@ -537,9 +574,16 @@ const Dashboard: React.FC = () => {
                                 🔗
                               </button>
                               <button
+                                className="action-button edit-button"
+                                onClick={(e) => handleEditarTermo(e, termo.id)}
+                                title="Editar"
+                              >
+                                ✏️
+                              </button>
+                              <button
                                 className="action-button delete-button"
                                 onClick={(e) => handleExcluirTermo(e, termo.id)}
-                                title="Excluir Termo"
+                                title="Excluir"
                               >
                                 🗑️
                               </button>
@@ -549,12 +593,11 @@ const Dashboard: React.FC = () => {
                             </button>
                           </>
                         ) : (
-                          <>
-                            <div className="termo-actions"></div>
-                            <button className="visualizar-button">
+                          <div className="termo-actions">
+                            <button className="visualizar-button full-width">
                               Visualizar
                             </button>
-                          </>
+                          </div>
                         )}
                       </div>
                     </motion.div>

@@ -14,8 +14,6 @@ body {
   width: 100%;
   max-width: 900px;
   margin: 0 auto;
-  padding: 2rem;
-  display: flex;
   flex-direction: column;
 }
 
@@ -185,6 +183,7 @@ body {
   border: 1px solid #fee2e2;
   font-size: 0.95rem;
   display: flex;
+
   align-items: center;
   animation: shake 0.5s ease-in-out;
 }
@@ -352,5 +351,61 @@ body {
 
   .termo-title {
     margin-bottom: 1.5rem;
+  }
+}
+
+.patrimonio-container {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.patrimonio-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.add-patrimonio-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background-color: #0066ff;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  line-height: 1;
+}
+
+.add-patrimonio-btn:hover {
+  background-color: #0052cc;
+  transform: scale(1.1);
+}
+
+.add-patrimonio-btn:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.patrimonio-input {
+  animation: slideDown 0.3s ease-out forwards;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 } 
