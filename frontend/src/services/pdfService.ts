@@ -7,6 +7,10 @@ interface TermoRecebimentoData {
   equipamento?: string;
   assinatura?: string;
   data?: string;
+  numeroSerie?: string;
+  patrimonio?: string;
+  status?: string;
+  id?: string | number;
 }
 
 export const generateTermoRecebimento = async (data: TermoRecebimentoData) => {
@@ -53,23 +57,6 @@ export const generateTermoRecebimento = async (data: TermoRecebimentoData) => {
   doc.text(splitIntro, marginLeft, currentY);
   currentY += splitIntro.length * 7 + 20;
 
-  // Itens numerados
-  doc.text('1º - Fazer uso deste(s), abstendo-me de usá-los para fins extra-profissionais;', marginLeft, currentY);
-  currentY += 15;
-  doc.text('2º - Zelar pela boa conservação destes;', marginLeft, currentY);
-  currentY += 15;
-  doc.text('3º - A restituí-los, ou seu valor correspondente, à empresa nos seguintes casos:', marginLeft, currentY);
-  currentY += 20;
-
-  // Subitens com bullets
-  doc.text('• Na eventualidade de me afastar do emprego definitivamente;', marginLeft + 10, currentY);
-  currentY += 15;
-  doc.text('• No caso de extravio ou quaisquer danos oriundos de mau uso ou falta de cuidado', marginLeft + 10, currentY);
-  doc.text('  para com eles;', marginLeft + 10, currentY + 7);
-  currentY += 22;
-  doc.text('• Por ocasião de troca por outros, depois de ter feito o devido uso;', marginLeft + 10, currentY);
-  currentY += 40;
-
   // Equipamento
   if (data.equipamento) {
     doc.text('Equipamento:', marginLeft, currentY);
@@ -98,6 +85,113 @@ export const generateTermoRecebimento = async (data: TermoRecebimentoData) => {
   doc.setLineWidth(0.5);
   const lineLength = 145;
   doc.line(marginLeft + 25, currentY + 15, marginLeft + lineLength, currentY + 15);
+
+  return doc;
+};
+
+export const generateTermoCompleto = async (data: TermoRecebimentoData) => {
+  // Criar documento PDF
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  // Configurações de página
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const marginLeft = 30;
+  const marginRight = 30;
+  const contentWidth = pageWidth - marginLeft - marginRight;
+  let currentY = 30;
+
+  // Título centralizado
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text('TERMO DE RECEBIMENTO E RESPONSABILIDADE', pageWidth / 2, currentY, { align: 'center' });
+  currentY += 20;
+
+  // Informações do termo
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'normal');
+  
+  // Identificação
+  doc.setFont('helvetica', 'bold');
+  doc.text('DADOS DO COLABORADOR:', marginLeft, currentY);
+  doc.setFont('helvetica', 'normal');
+  currentY += 8;
+  
+  // Nome completo
+  const nomeCompleto = `${data.nome || ''} ${data.sobrenome || ''}`.trim();
+  doc.text(`Nome: ${nomeCompleto}`, marginLeft, currentY);
+  currentY += 8;
+  
+  // Pulando a exibição do email e ajustando a altura
+  currentY += 5;
+  
+  // Equipamento
+  doc.setFont('helvetica', 'bold');
+  doc.text('DADOS DO EQUIPAMENTO:', marginLeft, currentY);
+  doc.setFont('helvetica', 'normal');
+  currentY += 8;
+  
+  if (data.equipamento) {
+    doc.text(`Equipamento: ${data.equipamento}`, marginLeft, currentY);
+    currentY += 8;
+  }
+  
+  if (data.numeroSerie) {
+    doc.text(`Número de Série: ${data.numeroSerie}`, marginLeft, currentY);
+    currentY += 8;
+  }
+  
+  if (data.patrimonio) {
+    doc.text(`Patrimônio: ${data.patrimonio}`, marginLeft, currentY);
+    currentY += 8;
+  }
+  
+  currentY += 5;
+  
+  // Texto principal
+  doc.setFont('helvetica', 'bold');
+  doc.text('TERMO DE RESPONSABILIDADE', marginLeft, currentY);
+  doc.setFont('helvetica', 'normal');
+  currentY += 10;
+  
+  const introText = 'Declaro estar ciente de que todos os itens especificados e entregues nesta ficha foram entregues gratuitamente para o exercício da minha função, sendo os mesmos de exclusiva propriedade da empresa, bem como a obrigatoriedade de seu uso no exercício de minhas atividades, comprometendo-me assim a respeitar e cumprir o termo de responsabilidade.';
+  const splitIntro = doc.splitTextToSize(introText, contentWidth);
+  doc.text(splitIntro, marginLeft, currentY);
+  currentY += splitIntro.length * 7 + 10;
+
+  // Data
+  const dataAtual = data.data || new Date().toLocaleDateString('pt-BR');
+  doc.text(`Data: ${dataAtual}`, marginLeft, currentY);
+  currentY += 30;
+
+  // Área de assinatura
+  doc.text('Assinatura do colaborador:', marginLeft, currentY);
+  currentY += 5;
+  
+  // Adicionar a imagem da assinatura se existir
+  if (data.assinatura) {
+    try {
+      const img = new Image();
+      img.src = data.assinatura;
+      doc.addImage(img, 'PNG', marginLeft, currentY, 70, 25);
+    } catch (error) {
+      console.warn('Erro ao adicionar assinatura:', error);
+    }
+  }
+
+  // Sempre adicionar a linha para assinatura, independente de ter ou não assinatura
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.2);
+  const lineLength = 80;
+  doc.line(marginLeft + 0, currentY + 20, marginLeft + lineLength, currentY + 20);
+
+  // Identificação do documento
+  doc.setFontSize(8);
+  doc.text(`ID do Termo: ${data.id || 'N/A'}`, pageWidth - marginRight - 40, pageHeight - 10);
 
   return doc;
 }; 

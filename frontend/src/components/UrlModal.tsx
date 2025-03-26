@@ -22,8 +22,8 @@ const UrlModal: React.FC<UrlModalProps> = ({ urlAcesso, onClose }) => {
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Link para Assinatura</h2>
           <button className="close-button" onClick={onClose}>×</button>
@@ -31,7 +31,7 @@ const UrlModal: React.FC<UrlModalProps> = ({ urlAcesso, onClose }) => {
 
         <div className="modal-body">
           <p className="modal-description">
-          Compartilhe este link com o usuário para que ele possa assinar o documento digitalmente.
+            Compartilhe este link com o usuário para que ele possa assinar o documento digitalmente.
           </p>
           
           <div className="url-box">
@@ -40,18 +40,15 @@ const UrlModal: React.FC<UrlModalProps> = ({ urlAcesso, onClose }) => {
               value={url}
               readOnly
               className="url-input"
+              onClick={(e) => (e.target as HTMLInputElement).select()}
             />
             <button
               onClick={handleCopyUrl}
               className={`copy-button ${copied ? 'copied' : ''}`}
             >
-              {copied ? 'Copiado ✅ ' : 'Copiar'}
+              {copied ? 'Copiado!' : 'Copiar'}
             </button>
           </div>
-        </div>
-
-        <div className="modal-footer">
-      
         </div>
       </div>
     </div>

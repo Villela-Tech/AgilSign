@@ -10,6 +10,8 @@ interface FormData {
   equipamento: string;
   equipe: string;
   numeroSerie: string;
+  patrimonio: string;
+  responsavelId: string;
   data: string;
 }
 
@@ -20,7 +22,9 @@ const initialFormData: FormData = {
   equipamento: '',
   equipe: '',
   numeroSerie: '',
-  data: ''
+  patrimonio: '',
+  responsavelId: '',
+  data: '',
 };
 
 interface Props {
@@ -34,8 +38,9 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showPatrimonio, setShowPatrimonio] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -80,12 +85,30 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
     
     setLoading(true);
     try {
+      // Extrair apenas os campos realmente necessários
       const formValues = { 
-        ...formData,
+        nome: formData.nome,
+        sobrenome: formData.sobrenome,
+        email: formData.email,
+        equipamento: formData.equipamento,
+        numeroSerie: formData.numeroSerie,
+        patrimonio: formData.patrimonio,
+        responsavelId: formData.responsavelId,
         status: 'pendente' as const
       };
       
-      console.log("Enviando dados para criação do termo:", formValues);
+      // Log detalhado para verificar os dados enviados
+      console.log("************ DADOS DO TERMO ************");
+      console.log("Nome:", formValues.nome);
+      console.log("Sobrenome:", formValues.sobrenome);
+      console.log("Email:", formValues.email);
+      console.log("Equipamento:", formValues.equipamento);
+      console.log("Número de Série:", formValues.numeroSerie);
+      console.log("Patrimônio:", formValues.patrimonio);
+      console.log("Responsável ID:", formValues.responsavelId);
+      console.log("Status:", formValues.status);
+      console.log("*****************************************");
+      
       const response = await TermoService.criar(formValues);
       console.log("Resposta do servidor:", response);
       
@@ -119,6 +142,7 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
     setFormData(initialFormData);
     setError(null);
     setSuccess(null);
+    setShowPatrimonio(false);
   };
 
   return (
@@ -210,7 +234,33 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
                 placeholder="Ex: Desenvolvimento"
               />
             </div>
-          </div>   
+          </div>
+
+          <div className="form-group patrimonio-container">
+            <div className="patrimonio-header">
+              <button 
+                type="button" 
+                className="add-patrimonio-btn"
+                onClick={() => setShowPatrimonio(!showPatrimonio)}
+                disabled={loading}
+              >
+                {showPatrimonio ? '−' : '+'}
+              </button>
+              <label htmlFor="patrimonio">Patrimônio (opcional)</label>
+            </div>
+            {showPatrimonio && (
+              <input
+                type="text"
+                id="patrimonio"
+                name="patrimonio"
+                value={formData.patrimonio}
+                onChange={handleChange}
+                disabled={loading}
+                placeholder="Ex: PAT12345"
+                className="patrimonio-input"
+              />
+            )}
+          </div>
 
           <div className="form-group">
             <label htmlFor="data">Data</label>

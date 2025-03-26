@@ -1,166 +1,385 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { TermoService, TermoDetalhes } from '../services/api';
+import { generateTermoCompleto } from '../services/pdfService';
+import UrlModal from './UrlModal';
 import './VisualizarTermo.css';
 
 const VisualizarTermo: React.FC = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [termo, setTermo] = useState<TermoDetalhes | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [downloadLoading, setDownloadLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [showLinkLoading, setShowLinkLoading] = useState(false);
+  const [termo, setTermo] = useState<any>(null);
+  const [showUrlModal, setShowUrlModal] = useState(false);
 
   useEffect(() => {
-    const carregarTermo = async () => {
+    const carregarPDF = async () => {
+      if (!id) {
+        setError('ID do termo não informado');
+        setLoading(false);
+        return;
+      }
+
       try {
-        if (!id) return;
-        const data = await TermoService.buscarPorId(Number(id));
-        setTermo(data);
-      } catch (err) {
-        setError('Erro ao carregar o termo. Por favor, tente novamente.');
-        console.error('Erro ao carregar termo:', err);
-      } finally {
+        const termoData = await TermoService.buscarPorId(Number(id));
+        
+        if (!termoData) {
+          setError('Termo não encontrado');
+          setLoading(false);
+          return;
+        }
+        
+        // Log para depuração - ver todos os campos disponíveis
+        console.log('Dados do termo completos:', JSON.stringify(termoData, null, 2));
+        
+        setTermo(termoData);
+
+        // Determinar qual data usar
+        let dataExibicao;
+        if (termoData.status === 'assinado') {
+          // Usa a data de atualização (assinatura) para termos assinados
+          const dataAtualizacao = termoData.updatedAt || termoData.updated_at;
+          console.log('Data de assinatura (updatedAt):', dataAtualizacao);
+          dataExibicao = new Date(dataAtualizacao).toLocaleDateString('pt-BR');
+        } else {
+          // Usa a data de criação como fallback
+          console.log('Data de criação (createdAt):', termoData.createdAt || termoData.created_at);
+          dataExibicao = new Date(termoData.createdAt || termoData.created_at).toLocaleDateString('pt-BR');
+        }
+
+        // Gerar PDF com o design completo
+        const responsavel = termoData.responsavelNome || (termoData.responsavelId ? `ID: ${termoData.responsavelId}` : 'Não informado');
+        const pdfDoc = await generateTermoCompleto({
+          id: termoData.id,
+          nome: termoData.nome,
+          sobrenome: termoData.sobrenome,
+          email: termoData.email,
+          equipamento: termoData.equipamento,
+          numeroSerie: termoData.numeroSerie,
+          patrimonio: termoData.patrimonio,
+          status: termoData.status,
+          assinatura: termoData.assinatura,
+          data: dataExibicao
+        });
+
+        const pdfBlob = pdfDoc.output('blob');
+        const url = URL.createObjectURL(pdfBlob);
+        setPdfUrl(url);
+        setLoading(false);
+      } catch (error: any) {
+        console.error('Erro ao carregar PDF:', error);
+        setError('Erro ao carregar o PDF. Por favor, tente novamente.');
         setLoading(false);
       }
     };
 
-    carregarTermo();
+    carregarPDF();
+
+    // Cleanup function
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+    };
   }, [id]);
 
-  const handleDownload = async () => {
-    if (!termo) {
-      console.error('[VisualizarTermo] Tentativa de download sem termo carregado');
-      return;
+  const handleVoltar = () => {
+    navigate('/dashboard');
+  };
+
+  const handleBaixarPDF = () => {
+    if (pdfUrl) {
+      setDownloadLoading(true);
+      setTimeout(() => {
+        const link = document.createElement('a');
+        link.href = pdfUrl;
+        link.download = `termo-${id}.pdf`;
+        link.click();
+        setDownloadLoading(false);
+      }, 500);
     }
-    
-    console.log('[VisualizarTermo] Iniciando download do PDF para termo:', {
-      id: termo.id,
-      nome: termo.nome,
-      status: termo.status
-    });
-    
-    setDownloading(true);
-    try {
-      const blob = await TermoService.downloadPDF(String(termo.id));
-      console.log('[VisualizarTermo] PDF recebido com sucesso');
-      
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `termo-${termo.nome.toLowerCase()}-${termo.id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (err) {
-      console.error('[VisualizarTermo] Erro ao baixar termo:', err);
-      setError('Não foi possível baixar o termo. Por favor, tente novamente.');
-      setTimeout(() => setError(null), 5000);
-    } finally {
-      setDownloading(false);
+  };
+  
+  const handleEditar = () => {
+    setEditLoading(true);
+    setTimeout(() => {
+      navigate(`/termo/${id}/editar`);
+    }, 500);
+  };
+
+  const handleShowLink = () => {
+    if (termo && termo.urlAcesso) {
+      setShowLinkLoading(true);
+      setTimeout(() => {
+        setShowUrlModal(true);
+        setShowLinkLoading(false);
+      }, 300);
     }
   };
 
-  const formatarData = (data: string) => {
-    return new Date(data).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const handleCloseUrlModal = () => {
+    setShowUrlModal(false);
   };
+
+  const isPendente = termo && termo.status === 'pendente';
 
   if (loading) {
     return (
-      <div className="visualizar-container">
-        <div className="loading-spinner"></div>
-        <p>Carregando termo...</p>
+      <div className="visualizar-termo-page">
+        <div className="visualizar-termo-container">
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <p>Carregando PDF...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
-  if (error || !termo) {
+  if (error) {
     return (
-      <div className="visualizar-container">
-        <div className="error-message">
-          {error || 'Termo não encontrado'}
-          <button onClick={() => navigate('/dashboard')} className="voltar-button">
-            Voltar ao Dashboard
-          </button>
+      <div className="visualizar-termo-page">
+        <div className="visualizar-termo-container">
+          <div className="error-container fade-in">
+            <div className="error-message">{error}</div>
+            <button className="button secondary" onClick={handleVoltar}>
+              Voltar
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="visualizar-container">
-      <div className="termo-card">
-        <div className="termo-header">
-          <h2>Termo de Recebimento</h2>
-          <span className={`status-badge ${termo.status}`}>
-            {termo.status === 'pendente' ? 'Pendente' : 'Assinado'}
-          </span>
-        </div>
-
+    <div className="visualizar-termo-page">
+      <div className="visualizar-termo-container">
         <div className="termo-content">
-          <div className="termo-section">
-            <h3>Dados do Recebedor</h3>
-            <div className="info-grid">
-              <div className="info-item">
-                <label>Nome:</label>
-                <p>{termo.nome} {termo.sobrenome}</p>
+          <div className="termo-header slide-in">
+            <h2>Visualização do Termo</h2>
+            {termo && (
+              <div className="termo-info">
+                <div className={`status-badge ${termo.status}`}>
+                  {termo.status === 'pendente' ? 'Pendente' : 'Assinado'}
+                </div>
               </div>
+            )}
+          </div>
+          
+          <div className="pdf-actions slide-in">
+            <button className="button custom-back-button" onClick={handleVoltar}>
+              Voltar
+            </button>
+            
+            <div className="action-buttons">
+              {isPendente && (
+                <>
+                  <button 
+                    className="button custom-edit-button" 
+                    onClick={handleEditar}
+                    disabled={editLoading}
+                  >
+                    {editLoading ? (
+                      <span>Carregando...</span>
+                    ) : (
+                      <>
+                        <span className="edit-icon">✏️</span>
+                        Editar
+                      </>
+                    )}
+                  </button>
+                  
+                  <button 
+                    className="button custom-link-button" 
+                    onClick={handleShowLink}
+                    disabled={showLinkLoading}
+                  >
+                    {showLinkLoading ? (
+                      <span>Carregando...</span>
+                    ) : (
+                      <>
+                        <span className="link-icon">🔗</span>
+                        Gerar Link
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
+              
+              <button 
+                className="button custom-download-button" 
+                onClick={handleBaixarPDF}
+                disabled={downloadLoading || isPendente}
+              >
+                {downloadLoading ? (
+                  <span>Baixando...</span>
+                ) : (
+                  <>
+                    <span className="download-icon">↓</span>
+                    Baixar PDF
+                  </>
+                )}
+              </button>
             </div>
           </div>
-
-          <div className="termo-section">
-            <h3>Equipamento</h3>
-            <div className="info-grid">
-              <div className="info-item">
-                <label>Descrição:</label>
-                <p>{termo.equipamento}</p>
-              </div>
-              <div className="info-item">
-                <label>Data de Criação:</label>
-                <p>{formatarData(termo.dataCriacao)}</p>
+          
+          {isPendente && (
+            <div className="pending-info-container scale-in">
+              <div className="pending-info-card">
+                <div className="pending-icon">⏳</div>
+                <h3>Termo Pendente de Assinatura</h3>
+                <p>Este termo ainda não foi assinado. Veja abaixo uma prévia do documento.</p>
+                <p>Compartilhe o link de assinatura para que o destinatário possa assinar o termo.</p>
               </div>
             </div>
-          </div>
+          )}
+          
+          {pdfUrl && (
+            <div className="pdf-container scale-in">
+              <iframe 
+                src={pdfUrl} 
+                className="pdf-viewer"
+                title="Visualização do Termo"
+              />
+            </div>
+          )}
 
-          {termo.status === 'assinado' && (
-            <div className="termo-section">
+          {termo && termo.status === 'assinado' && termo.assinatura && (
+            <div className="assinatura-container slide-in">
               <h3>Assinatura</h3>
               <div className="assinatura-preview">
-                <img src={termo.assinatura} alt="Assinatura" />
+                <img src={termo.assinatura} alt="Assinatura do termo" />
+              </div>
+            </div>
+          )}
+
+          {termo && (
+            <div className="detalhes-termo-container slide-in">
+              <h3>Detalhes do Equipamento</h3>
+              <div className="detalhes-grid">
+                <div className="detalhe-item">
+                  <span className="detalhe-label">Equipamento:</span>
+                  <span className="detalhe-valor">{termo.equipamento}</span>
+                </div>
+                
+                <div className="detalhe-item">
+                  <span className="detalhe-label">Número de Série:</span>
+                  <span className="detalhe-valor">
+                    {termo.numeroSerie ? termo.numeroSerie : "Não informado"}
+                  </span>
+                </div>
+                
+                {termo.patrimonio && termo.patrimonio.trim() && (
+                  <div className="detalhe-item">
+                    <span className="detalhe-label">Patrimônio:</span>
+                    <span className="detalhe-valor">{termo.patrimonio}</span>
+                  </div>
+                )}
+                
+                <div className="detalhe-item">
+                  <span className="detalhe-label">Responsável pelo Recebimento:</span>
+                  <span className="detalhe-valor">{termo.nome} {termo.sobrenome}</span>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {termo && (
+            <div className="logs-container slide-in">
+              <h3>
+                Logs do Termo
+                <span className="admin-badge">Admin</span>
+              </h3>
+              <div className="logs-timeline">
+                <div className="log-item">
+                  <div className="log-icon creation">📝</div>
+                  <div className="log-content">
+                    <span className="log-title">Criação do Termo</span>
+                    <span className="log-date">
+                      {new Date(termo.createdAt || termo.created_at).toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                      })}
+                    </span>
+                    {termo.responsavelNome && (
+                      <span className="log-details">Por: {termo.responsavelNome}</span>
+                    )}
+                  </div>
+                </div>
+                
+                {termo.status === 'assinado' && (
+                  <div className="log-item">
+                    <div className="log-icon signature">✅</div>
+                    <div className="log-content">
+                      <span className="log-title">Assinatura do Termo</span>
+                      <span className="log-date">
+                        {new Date(termo.updatedAt || termo.updated_at).toLocaleDateString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit'
+                        })}
+                      </span>
+                      <span className="log-details">Por: {termo.nome} {termo.sobrenome}</span>
+                    </div>
+                  </div>
+                )}
+                
+                {termo.status === 'pendente' && 
+                 new Date(termo.createdAt || termo.created_at).getTime() !== new Date(termo.updatedAt || termo.updated_at).getTime() && (
+                  <div className="log-item">
+                    <div className="log-icon edited">🔄</div>
+                    <div className="log-content">
+                      <span className="log-title">Última Modificação</span>
+                      <span className="log-date">
+                        {new Date(termo.updatedAt || termo.updated_at).toLocaleDateString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit'
+                        })}
+                      </span>
+                      {termo.responsavelNome && (
+                        <span className="log-details">Por: {termo.responsavelNome}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {termo.status === 'pendente' && (
+                  <div className="log-item pending">
+                    <div className="log-icon pending">⏳</div>
+                    <div className="log-content">
+                      <span className="log-title">Aguardando Assinatura</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
         </div>
-
-        <div className="termo-actions">
-          <button onClick={() => navigate('/dashboard')} className="voltar-button">
-            Voltar ao Dashboard
-          </button>
-          <button 
-            onClick={handleDownload} 
-            className="download-button"
-            disabled={termo.status === 'pendente' || downloading}
-          >
-            {downloading ? (
-              <>
-                <div className="loading-spinner-small"></div>
-                <span>Baixando...</span>
-              </>
-            ) : (
-              <>
-                <span>⬇️</span> Baixar Termo
-              </>
-            )}
-          </button>
-        </div>
       </div>
+
+      {/* Usar o componente UrlModal */}
+      {showUrlModal && termo && termo.urlAcesso && (
+        <UrlModal 
+          urlAcesso={termo.urlAcesso}
+          onClose={handleCloseUrlModal}
+        />
+      )}
     </div>
   );
 };
