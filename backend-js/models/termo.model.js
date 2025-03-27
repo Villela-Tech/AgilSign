@@ -41,6 +41,19 @@ Termo.init(
     assinatura: {
       type: DataTypes.TEXT,
       allowNull: true,
+    },
+    responsavel_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'users',
+        key: 'id'
+      }
+    },
+    numeroSerie: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: 'numero_serie'
     }
   },
   {

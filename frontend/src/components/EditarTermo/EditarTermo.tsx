@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { TermoService } from '../../services/api';
+import { TermoService, UserService, Usuario } from '../../services/api';
 import '../TermoCompromisso/TermoCompromisso.css';
 import './EditarTermo.css';
 import Sidebar from '../Sidebar/Sidebar';
@@ -16,6 +16,7 @@ interface FormData {
   equipe: string;
   numeroSerie: string;
   patrimonio?: string;
+  responsavelId?: number;
 }
 
 const initialFormData: FormData = {
@@ -25,7 +26,8 @@ const initialFormData: FormData = {
   equipamento: '',
   equipe: '',
   numeroSerie: '',
-  patrimonio: ''
+  patrimonio: '',
+  responsavelId: undefined
 };
 
 const EditarTermo: React.FC = () => {
@@ -37,13 +39,15 @@ const EditarTermo: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showPatrimonio, setShowPatrimonio] = useState(false);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [loadingUsuarios, setLoadingUsuarios] = useState(false);
   
-  // Carregar dados do termo ao iniciar
+  // Carregar usuários e termo ao iniciar
   useEffect(() => {
     console.log("EditarTermo - Componente montado");
     console.log("EditarTermo - ID recebido:", id);
     
-    const carregarTermo = async () => {
+    const carregarDados = async () => {
       if (!id) {
         console.error("EditarTermo - ID não informado");
         setError("ID do termo não informado");
@@ -52,6 +56,13 @@ const EditarTermo: React.FC = () => {
       }
       
       try {
+        // Carregar usuários
+        setLoadingUsuarios(true);
+        const usuariosData = await UserService.listar();
+        setUsuarios(usuariosData);
+        setLoadingUsuarios(false);
+        
+        // Carregar termo
         console.log("EditarTermo - Buscando termo com ID:", id);
         const termo = await TermoService.buscarPorId(Number(id));
         console.log("EditarTermo - Termo encontrado:", termo);
@@ -78,7 +89,8 @@ const EditarTermo: React.FC = () => {
           equipamento: termo.equipamento || '',
           equipe: termo.equipe || '',
           numeroSerie: termo.numeroSerie || '',
-          patrimonio: termo.patrimonio || ''
+          patrimonio: termo.patrimonio || '',
+          responsavelId: termo.responsavelId
         });
         
         // Mostrar campo de patrimônio se estiver preenchido
@@ -88,20 +100,20 @@ const EditarTermo: React.FC = () => {
         
         setLoading(false);
       } catch (error) {
-        console.error("Erro ao carregar termo:", error);
-        setError("Erro ao carregar dados do termo. Por favor, tente novamente.");
+        console.error("Erro ao carregar dados:", error);
+        setError("Erro ao carregar dados. Por favor, tente novamente.");
         setLoading(false);
       }
     };
     
-    carregarTermo();
+    carregarDados();
   }, [id]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: name === 'responsavelId' ? (value ? parseInt(value) : undefined) : value
     }));
     setError(null);
   };
@@ -123,6 +135,10 @@ const EditarTermo: React.FC = () => {
       setError('Número de série é obrigatório');
       return false;
     }
+    if (!formData.responsavelId) {
+      setError('Responsável pela entrega é obrigatório');
+      return false;
+    }
     return true;
   };
 
@@ -133,8 +149,19 @@ const EditarTermo: React.FC = () => {
     
     setSaving(true);
     try {
+      // Verificar se numeroSerie está preenchido
+      if (!formData.numeroSerie.trim()) {
+        setError('Número de série é obrigatório');
+        setSaving(false);
+        return;
+      }
+      
       const formValues = { 
         ...formData,
+        // Garantir que o numeroSerie seja enviado com trim
+        numeroSerie: formData.numeroSerie.trim(),
+        // Incluir patrimônio apenas se estiver preenchido
+        patrimonio: showPatrimonio && formData.patrimonio?.trim() ? formData.patrimonio.trim() : undefined,
         status: 'pendente' as const
       };
       
@@ -142,9 +169,11 @@ const EditarTermo: React.FC = () => {
         throw new Error("ID do termo não informado");
       }
       
-      console.log("Enviando dados para atualização do termo:", formValues);
+      // Log detalhado para debug
+      console.log("Enviando dados para atualização do termo:", JSON.stringify(formValues, null, 2));
+      
       const response = await TermoService.atualizar(Number(id), formValues);
-      console.log("Resposta do servidor:", response);
+      console.log("Resposta do servidor:", JSON.stringify(response, null, 2));
       
       if (response) {
         setSuccess("Termo de compromisso atualizado com sucesso!");
@@ -317,21 +346,45 @@ const EditarTermo: React.FC = () => {
                 onChange={handleChange}
                 required
                 disabled={saving}
-                placeholder="Ex: SN123456"
+                placeholder="Ex: ABC123XYZ"
               />
             </div>
             <div className="form-group">
-              <label htmlFor="equipe">Equipe ou Departamento</label>
+              <label htmlFor="equipe">Equipe</label>
               <input
                 type="text"
                 id="equipe"
                 name="equipe"
                 value={formData.equipe}
                 onChange={handleChange}
+                required
                 disabled={saving}
-                placeholder="Ex: TI"
+                placeholder="Ex: Desenvolvimento"
               />
             </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="responsavelId">Responsável pela Entrega</label>
+            <select
+              id="responsavelId"
+              name="responsavelId"
+              value={formData.responsavelId || ''}
+              onChange={handleChange}
+              required
+              disabled={saving || loadingUsuarios}
+              className="form-select"
+            >
+              <option value="">Selecione um responsável</option>
+              {usuarios.map(usuario => (
+                <option key={usuario.id} value={usuario.id}>
+                  {usuario.name}
+                </option>
+              ))}
+            </select>
+            {loadingUsuarios && (
+              <div className="select-loading">Carregando usuários...</div>
+            )}
           </div>
 
           <div className="form-group patrimonio-group">
@@ -365,9 +418,17 @@ const EditarTermo: React.FC = () => {
           </div>
 
           <div className="form-actions">
-            <button
-              type="submit"
-              className="form-button primary"
+            <button 
+              type="button" 
+              className="cancel-button"
+              onClick={handleVoltar}
+              disabled={saving}
+            >
+              Cancelar
+            </button>
+            <button 
+              type="submit" 
+              className="salvar-button"
               disabled={saving}
             >
               {saving ? (
@@ -376,16 +437,8 @@ const EditarTermo: React.FC = () => {
                   style={{ width: 30, height: 30 }}
                 />
               ) : (
-                "Salvar Alterações"
+                'Salvar Alterações'
               )}
-            </button>
-            <button 
-              type="button" 
-              className="form-button secondary"
-              onClick={handleVoltar} 
-              disabled={saving}
-            >
-              Cancelar
             </button>
           </div>
         </form>

@@ -26,6 +26,9 @@ router.get('/', termoController.list);
 // Buscar termo por URL de acesso
 router.get('/acesso/:urlAcesso', termoController.getByUrl);
 
+// Listar termos por responsável
+router.get('/responsavel/:responsavelId', termoController.listByResponsavel);
+
 // Assinar termo
 router.post('/assinar/:urlAcesso', assinaturaValidation, termoController.sign);
 

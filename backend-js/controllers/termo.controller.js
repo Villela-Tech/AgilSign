@@ -253,6 +253,24 @@ const downloadPDF = async (req, res) => {
   }
 };
 
+// Listar termos por responsável
+const listByResponsavel = async (req, res) => {
+  try {
+    const responsavelId = req.params.responsavelId;
+    console.log('Listando termos para o responsável:', responsavelId);
+    
+    const termos = await Termo.findAll({
+      where: { responsavel_id: responsavelId }
+    });
+    
+    console.log(`Encontrados ${termos.length} termos para o responsável ${responsavelId}`);
+    res.json(termos);
+  } catch (error) {
+    console.error('Erro ao listar termos por responsável:', error);
+    res.status(500).json({ message: 'Erro ao listar termos por responsável' });
+  }
+};
+
 module.exports = {
   create,
   list,
@@ -261,5 +279,6 @@ module.exports = {
   sign,
   update,
   remove,
-  downloadPDF
+  downloadPDF,
+  listByResponsavel
 };

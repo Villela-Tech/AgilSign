@@ -6,6 +6,7 @@ import './VisualizarTermo.css';
 import Sidebar from '../Sidebar/Sidebar';
 import Lottie from 'lottie-react';
 import loadingAnimation from '../../assets/Animations/loading.json';
+import UrlModal from '../UrlModal/UrlModal';
 
 const VisualizarTermo: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,7 +16,10 @@ const VisualizarTermo: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [downloadLoading, setDownloadLoading] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
+  const [showLinkLoading, setShowLinkLoading] = useState(false);
   const [termo, setTermo] = useState<any>(null);
+  const [showUrlModal, setShowUrlModal] = useState(false);
+  const [selectedUrlAcesso, setSelectedUrlAcesso] = useState<string | null>(null);
 
   useEffect(() => {
     const carregarPDF = async () => {
@@ -34,12 +38,8 @@ const VisualizarTermo: React.FC = () => {
           return;
         }
         
-        // Verifica se o termo está assinado
-        if (termoData.status !== 'assinado') {
-          setError('Este termo ainda está pendente de assinatura e não pode ser visualizado');
-          setLoading(false);
-          return;
-        }
+        // Log para depuração - ver todos os campos disponíveis
+        console.log('Dados do termo completos:', JSON.stringify(termoData, null, 2));
         
         setTermo(termoData);
 
@@ -57,6 +57,7 @@ const VisualizarTermo: React.FC = () => {
         }
 
         // Gerar PDF com o novo design
+        const responsavel = termoData.responsavelNome || (termoData.responsavelId ? `ID: ${termoData.responsavelId}` : 'Não informado');
         const pdfDoc = await generateTermoRecebimento({
           nome: termoData.nome,
           sobrenome: termoData.sobrenome,
@@ -66,7 +67,7 @@ const VisualizarTermo: React.FC = () => {
           equipe: termoData.equipe,
           assinatura: termoData.assinatura,
           data: dataExibicao,
-          responsavel: 'Arthur Pomiecinski',
+          responsavel: responsavel,
           patrimonio: termoData.patrimonio
         });
 
@@ -92,7 +93,7 @@ const VisualizarTermo: React.FC = () => {
   }, [id]);
 
   const handleVoltar = () => {
-    navigate('/dashboard');
+    window.location.href = '/dashboard';
   };
 
   const handleBaixarPDF = () => {
@@ -113,6 +114,18 @@ const VisualizarTermo: React.FC = () => {
     setTimeout(() => {
       navigate(`/termo/editar/${id}`);
     }, 500);
+  };
+
+  const handleShowLink = () => {
+    if (termo && termo.urlAcesso) {
+      setShowLinkLoading(true);
+      setTimeout(() => {
+        const linkAssinatura = TermoService.gerarLinkAssinatura(termo.urlAcesso);
+        setSelectedUrlAcesso(linkAssinatura);
+        setShowUrlModal(true);
+        setShowLinkLoading(false);
+      }, 500);
+    }
   };
 
   const isPendente = termo && termo.status === 'pendente';
@@ -162,51 +175,60 @@ const VisualizarTermo: React.FC = () => {
                 <div className={`status-badge ${termo.status}`}>
                   {termo.status === 'pendente' ? 'Pendente' : 'Assinado'}
                 </div>
-                {termo.status === 'assinado' && (
-                  <div className="date-info">
-                    Assinado em: {new Date(termo.updatedAt || termo.updated_at).toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </div>
-                )}
               </div>
             )}
           </div>
           
           <div className="pdf-actions slide-in">
-            <button className="button secondary" onClick={handleVoltar}>
+            <button className="button custom-back-button" onClick={handleVoltar}>
               Voltar
             </button>
             
             <div className="action-buttons">
               {isPendente && (
-                <button 
-                  className="button primary edit-button" 
-                  onClick={handleEditar}
-                  disabled={editLoading}
-                >
-                  {editLoading ? (
-                    <Lottie
-                      animationData={loadingAnimation}
-                      style={{ width: 30, height: 30 }}
-                    />
-                  ) : (
-                    <>
-                      <span className="edit-icon">✏️</span>
-                      Editar Termo
-                    </>
-                  )}
-                </button>
+                <>
+                  <button 
+                    className="button custom-edit-button" 
+                    onClick={handleEditar}
+                    disabled={editLoading}
+                  >
+                    {editLoading ? (
+                      <Lottie
+                        animationData={loadingAnimation}
+                        style={{ width: 30, height: 30 }}
+                      />
+                    ) : (
+                      <>
+                        <span className="edit-icon">✏️</span>
+                        Editar
+                      </>
+                    )}
+                  </button>
+                  
+                  <button 
+                    className="button custom-link-button" 
+                    onClick={handleShowLink}
+                    disabled={showLinkLoading}
+                  >
+                    {showLinkLoading ? (
+                      <Lottie
+                        animationData={loadingAnimation}
+                        style={{ width: 30, height: 30 }}
+                      />
+                    ) : (
+                      <>
+                        <span className="link-icon">🔗</span>
+                        Gerar Link
+                      </>
+                    )}
+                  </button>
+                </>
               )}
               
               <button 
-                className="button primary download-button" 
+                className="button custom-download-button" 
                 onClick={handleBaixarPDF}
-                disabled={downloadLoading}
+                disabled={downloadLoading || isPendente}
               >
                 {downloadLoading ? (
                   <Lottie
@@ -223,6 +245,17 @@ const VisualizarTermo: React.FC = () => {
             </div>
           </div>
           
+          {isPendente && (
+            <div className="pending-info-container scale-in">
+              <div className="pending-info-card">
+                <div className="pending-icon">⏳</div>
+                <h3>Termo Pendente de Assinatura</h3>
+                <p>Este termo ainda não foi assinado. Veja abaixo uma prévia do documento.</p>
+                <p>Compartilhe o link de assinatura para que o destinatário possa assinar o termo.</p>
+              </div>
+            </div>
+          )}
+          
           {pdfUrl && (
             <div className="pdf-container scale-in">
               <iframe 
@@ -232,8 +265,148 @@ const VisualizarTermo: React.FC = () => {
               />
             </div>
           )}
+
+          {termo && termo.status === 'assinado' && termo.assinatura && (
+            <div className="assinatura-container slide-in">
+              <h3>Assinatura</h3>
+              <div className="assinatura-preview">
+                <img src={termo.assinatura} alt="Assinatura do termo" />
+              </div>
+            </div>
+          )}
+
+          {termo && (
+            <div className="detalhes-termo-container slide-in">
+              <h3>Detalhes do Equipamento</h3>
+              <div className="detalhes-grid">
+                <div className="detalhe-item">
+                  <span className="detalhe-label">Equipamento:</span>
+                  <span className="detalhe-valor">{termo.equipamento}</span>
+                </div>
+                
+                <div className="detalhe-item">
+                  <span className="detalhe-label">Número de Série:</span>
+                  <span className="detalhe-valor">
+                    {termo.numeroSerie ? termo.numeroSerie : "Não informado"}
+                  </span>
+                </div>
+                
+                {termo.patrimonio && termo.patrimonio.trim() && (
+                  <div className="detalhe-item">
+                    <span className="detalhe-label">Patrimônio:</span>
+                    <span className="detalhe-valor">{termo.patrimonio}</span>
+                  </div>
+                )}
+                
+                <div className="detalhe-item">
+                  <span className="detalhe-label">Responsável pelo Recebimento:</span>
+                  <span className="detalhe-valor">{termo.nome} {termo.sobrenome}</span>
+                </div>
+
+                <div className="detalhe-item">
+                  <span className="detalhe-label">Responsável pela Entrega:</span>
+                  <span className="detalhe-valor">
+                    {termo.responsavelNome || (termo.responsavelId ? `ID: ${termo.responsavelId}` : "Não informado")}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {termo && (
+            <div className="logs-container slide-in">
+              <h3>
+                Logs do Termo
+                <span className="admin-badge">Admin</span>
+              </h3>
+              <div className="logs-timeline">
+                <div className="log-item">
+                  <div className="log-icon creation">📝</div>
+                  <div className="log-content">
+                    <span className="log-title">Criação do Termo</span>
+                    <span className="log-date">
+                      {new Date(termo.createdAt || termo.created_at).toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                      })}
+                    </span>
+                    {termo.responsavelNome && (
+                      <span className="log-details">Por: {termo.responsavelNome}</span>
+                    )}
+                  </div>
+                </div>
+                
+                {termo.status === 'assinado' && (
+                  <div className="log-item">
+                    <div className="log-icon signature">✅</div>
+                    <div className="log-content">
+                      <span className="log-title">Assinatura do Termo</span>
+                      <span className="log-date">
+                        {new Date(termo.updatedAt || termo.updated_at).toLocaleDateString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit'
+                        })}
+                      </span>
+                      <span className="log-details">Por: {termo.nome} {termo.sobrenome}</span>
+                    </div>
+                  </div>
+                )}
+                
+                {termo.status === 'pendente' && 
+                 new Date(termo.createdAt || termo.created_at).getTime() !== new Date(termo.updatedAt || termo.updated_at).getTime() && (
+                  <div className="log-item">
+                    <div className="log-icon edited">🔄</div>
+                    <div className="log-content">
+                      <span className="log-title">Última Modificação</span>
+                      <span className="log-date">
+                        {new Date(termo.updatedAt || termo.updated_at).toLocaleDateString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit'
+                        })}
+                      </span>
+                      {termo.responsavelNome && (
+                        <span className="log-details">Por: {termo.responsavelNome}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {termo.status === 'pendente' && (
+                  <div className="log-item pending">
+                    <div className="log-icon pending">⏳</div>
+                    <div className="log-content">
+                      <span className="log-title">Aguardando Assinatura</span>
+                      <span className="log-details">Enviado para: {termo.email}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
+      
+      {showUrlModal && selectedUrlAcesso && (
+        <UrlModal
+          urlAcesso={selectedUrlAcesso}
+          onClose={() => {
+            setShowUrlModal(false);
+            setSelectedUrlAcesso(null);
+          }}
+        />
+      )}
     </div>
   );
 };

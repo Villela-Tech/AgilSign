@@ -112,6 +112,9 @@ export interface TermoDetalhes {
   created_at: string;
   updated_at: string;
   patrimonio?: string;
+  numeroSerie?: string;
+  responsavelId?: number;
+  responsavelNome?: string;
 }
 
 export interface TermoCompromisso {
@@ -129,6 +132,8 @@ export interface TermoCompromisso {
   created_at: string;
   updated_at: string;
   patrimonio?: string;
+  responsavelId?: number;
+  responsavelNome?: string;
 }
 
 export interface CriarTermoDTO {
@@ -141,6 +146,7 @@ export interface CriarTermoDTO {
   data: string;
   status: 'pendente';
   patrimonio?: string;
+  responsavelId?: number;
 }
 
 export interface AtualizarStatusDTO {
@@ -156,6 +162,11 @@ interface ApiResponse {
 export const TermoService = {
   listar: async (): Promise<TermoCompromisso[]> => {
     const response = await api.get<TermoCompromisso[]>('/termos');
+    return response.data;
+  },
+
+  listarPorResponsavel: async (responsavelId: number): Promise<TermoCompromisso[]> => {
+    const response = await api.get<TermoCompromisso[]>(`/termos/responsavel/${responsavelId}`);
     return response.data;
   },
 

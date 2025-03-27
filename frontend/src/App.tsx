@@ -53,14 +53,10 @@ const AnimatedRoutes = () => {
           </AnimatedLayout>
         } />
         <Route path="/visualizar/:id" element={
-          <AnimatedLayout>
-            <VisualizarTermo />
-          </AnimatedLayout>
+          <VisualizarTermo />
         } />
         <Route path="/termo/:id" element={
-          <AnimatedLayout>
-            <VisualizarTermo />
-          </AnimatedLayout>
+          <VisualizarTermo />
         } />
       </Routes>
     </AnimatePresence>

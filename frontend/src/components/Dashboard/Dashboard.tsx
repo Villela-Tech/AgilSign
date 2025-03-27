@@ -219,7 +219,7 @@ const Dashboard: React.FC = () => {
   };
 
   const handleVisualizarTermo = (id: string, status: string) => {
-    navigate(`/visualizar/${id}`);
+    navigate(`/termo/${id}`);
   };
 
   const handleGerarLink = (e: React.MouseEvent, termo: TermoDetalhes) => {

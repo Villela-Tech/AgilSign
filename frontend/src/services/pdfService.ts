@@ -49,19 +49,21 @@ export const generateTermoRecebimento = (data: TermoRecebimentoData) => {
   // Número de Série
   doc.text('Número de Série:', 20, 110);
   doc.rect(20, 112, 170, 10);
-  doc.text(data.numeroSerie || '', 25, 119);
+  const numeroSerie = data.numeroSerie?.trim() || "Não informado";
+  doc.text(numeroSerie, 25, 119);
 
   // Patrimônio (opcional)
   let currentY = 130;
-  if (data.patrimonio) {
+  if (data.patrimonio && data.patrimonio.trim()) {
+    const patrimonio = data.patrimonio.trim();
     doc.text('Patrimônio:', 20, currentY);
     doc.rect(20, currentY + 2, 170, 10);
-    doc.text(data.patrimonio || '', 25, currentY + 9);
+    doc.text(patrimonio, 25, currentY + 9);
     currentY += 20;
   }
 
   // Responsável
-  doc.text(`Equipamento entregue por ${data.responsavel || 'Arthur Pomiecinski'}.`, 20, currentY);
+  doc.text(`Equipamento entregue por ${data.responsavel || 'Não informado'}.`, 20, currentY);
   
   // Data de assinatura
   if (data.assinatura) {
@@ -84,4 +86,4 @@ export const generateTermoRecebimento = (data: TermoRecebimentoData) => {
   doc.line(25, 232, 70, 232);
 
   return doc;
-}; 
+};

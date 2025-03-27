@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TermoService } from '../../services/api';
+import { TermoService, UserService, Usuario } from '../../services/api';
 import './TermoCompromisso.css';
 import Sidebar from '../Sidebar/Sidebar';
 import Lottie from 'lottie-react';
@@ -15,6 +15,7 @@ interface FormData {
   numeroSerie: string;
   data: string;
   patrimonio?: string;
+  responsavelId?: number;
 }
 
 const initialFormData: FormData = {
@@ -24,13 +25,14 @@ const initialFormData: FormData = {
   equipamento: '',
   equipe: '',
   numeroSerie: '',
-  data: '',
-  patrimonio: ''
+  data: new Date().toISOString().split('T')[0],
+  patrimonio: '',
+  responsavelId: undefined
 };
 
 interface Props {
   onComplete?: () => void;
-  onUrlGenerated?: (url: string, id?: number) => void;
+  onUrlGenerated?: (url: string, id: number) => void;
 }
 
 const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
@@ -40,21 +42,32 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showPatrimonio, setShowPatrimonio] = useState(false);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [loadingUsuarios, setLoadingUsuarios] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Carregar os usuários ao montar o componente
+  useEffect(() => {
+    const carregarUsuarios = async () => {
+      setLoadingUsuarios(true);
+      try {
+        const data = await UserService.listar();
+        setUsuarios(data);
+      } catch (error) {
+        console.error("Erro ao carregar usuários:", error);
+        setError("Erro ao carregar lista de usuários. Por favor, recarregue a página.");
+      } finally {
+        setLoadingUsuarios(false);
+      }
+    };
+
+    carregarUsuarios();
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
-    }));
-    setError(null);
-  };
-
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
+      [name]: name === 'responsavelId' ? (value ? parseInt(value) : undefined) : value
     }));
     setError(null);
   };
@@ -76,6 +89,14 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
       setError('Número de série é obrigatório');
       return false;
     }
+    if (!formData.equipe.trim()) {
+      setError('Equipe é obrigatória');
+      return false;
+    }
+    if (!formData.responsavelId) {
+      setError('Responsável pela entrega é obrigatório');
+      return false;
+    }
     return true;
   };
 
@@ -86,14 +107,28 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
     
     setLoading(true);
     try {
+      // Verificar se numeroSerie está preenchido
+      if (!formData.numeroSerie.trim()) {
+        setError('Número de série é obrigatório');
+        setLoading(false);
+        return;
+      }
+      
+      // Preparar os dados do formulário com números de série e patrimônio
       const formValues = { 
         ...formData,
+        // Garantir que o numeroSerie seja enviado com trim
+        numeroSerie: formData.numeroSerie.trim(),
+        // Incluir patrimônio apenas se estiver preenchido
+        patrimonio: showPatrimonio && formData.patrimonio?.trim() ? formData.patrimonio.trim() : undefined,
         status: 'pendente' as const
       };
       
-      console.log("Enviando dados para criação do termo:", formValues);
+      // Log detalhado para debug
+      console.log("Enviando dados para criação do termo:", JSON.stringify(formValues, null, 2));
+      
       const response = await TermoService.criar(formValues);
-      console.log("Resposta do servidor:", response);
+      console.log("Resposta do servidor:", JSON.stringify(response, null, 2));
       
       if (response && response.id) {
         setSuccess("Termo de compromisso criado com sucesso!");
@@ -104,7 +139,7 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
         // Garantir que a modal seja exibida imediatamente após criar o termo
         if (onUrlGenerated && response.urlAcesso) {
           console.log("Chamando onUrlGenerated com URL:", response.urlAcesso, "ID:", response.id);
-          onUrlGenerated(response.urlAcesso, response.id);
+          onUrlGenerated(response.urlAcesso, parseInt(response.id));
         }
         
         if (onComplete) {
@@ -213,10 +248,34 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
                 name="equipe"
                 value={formData.equipe}
                 onChange={handleChange}
+                required
                 disabled={loading}
                 placeholder="Ex: Desenvolvimento"
               />
             </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="responsavelId">Responsável pela Entrega</label>
+            <select
+              id="responsavelId"
+              name="responsavelId"
+              value={formData.responsavelId || ''}
+              onChange={handleChange}
+              required
+              disabled={loading || loadingUsuarios}
+              className="form-select"
+            >
+              <option value="">Selecione um responsável</option>
+              {usuarios.map(usuario => (
+                <option key={usuario.id} value={usuario.id}>
+                  {usuario.name}
+                </option>
+              ))}
+            </select>
+            {loadingUsuarios && (
+              <div className="select-loading">Carregando usuários...</div>
+            )}
           </div>
 
           <div className="form-group patrimonio-container">
@@ -253,7 +312,7 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
               id="data"
               name="data"
               value={formData.data}
-              onChange={handleDateChange}
+              onChange={handleChange}
               required
               disabled={loading}
               min={new Date().toISOString().split('T')[0]}
