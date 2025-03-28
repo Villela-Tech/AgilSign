@@ -15,7 +15,6 @@ interface FormData {
   numeroSerie: string;
   data: string;
   patrimonio?: string;
-  responsavelId?: number;
 }
 
 const initialFormData: FormData = {
@@ -26,8 +25,7 @@ const initialFormData: FormData = {
   equipe: '',
   numeroSerie: '',
   data: new Date().toISOString().split('T')[0],
-  patrimonio: '',
-  responsavelId: undefined
+  patrimonio: ''
 };
 
 interface Props {
@@ -93,18 +91,14 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
       setError('Equipe é obrigatória');
       return false;
     }
-    if (!formData.responsavelId) {
-      setError('Responsável pela entrega é obrigatório');
-      return false;
-    }
     return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     setLoading(true);
     try {
       // Verificar se numeroSerie está preenchido
@@ -113,9 +107,9 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
         setLoading(false);
         return;
       }
-      
+
       // Preparar os dados do formulário com números de série e patrimônio
-      const formValues = { 
+      const formValues = {
         ...formData,
         // Garantir que o numeroSerie seja enviado com trim
         numeroSerie: formData.numeroSerie.trim(),
@@ -123,29 +117,29 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
         patrimonio: showPatrimonio && formData.patrimonio?.trim() ? formData.patrimonio.trim() : undefined,
         status: 'pendente' as const
       };
-      
+
       // Log detalhado para debug
       console.log("Enviando dados para criação do termo:", JSON.stringify(formValues, null, 2));
-      
+
       const response = await TermoService.criar(formValues);
       console.log("Resposta do servidor:", JSON.stringify(response, null, 2));
-      
+
       if (response && response.id) {
         setSuccess("Termo de compromisso criado com sucesso!");
-        
+
         // Sinalizar que a lista de termos deve ser atualizada
         localStorage.setItem('termos_updated', 'true');
-        
+
         // Garantir que a modal seja exibida imediatamente após criar o termo
         if (onUrlGenerated && response.urlAcesso) {
           console.log("Chamando onUrlGenerated com URL:", response.urlAcesso, "ID:", response.id);
           onUrlGenerated(response.urlAcesso, parseInt(response.id));
         }
-        
+
         if (onComplete) {
           onComplete();
         }
-        
+
         resetForm();
       }
     } catch (error) {
@@ -254,34 +248,10 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
               />
             </div>
           </div>
-
-          <div className="form-group">
-            <label htmlFor="responsavelId">Responsável pela Entrega</label>
-            <select
-              id="responsavelId"
-              name="responsavelId"
-              value={formData.responsavelId || ''}
-              onChange={handleChange}
-              required
-              disabled={loading || loadingUsuarios}
-              className="form-select"
-            >
-              <option value="">Selecione um responsável</option>
-              {usuarios.map(usuario => (
-                <option key={usuario.id} value={usuario.id}>
-                  {usuario.name}
-                </option>
-              ))}
-            </select>
-            {loadingUsuarios && (
-              <div className="select-loading">Carregando usuários...</div>
-            )}
-          </div>
-
           <div className="form-group patrimonio-container">
             <div className="patrimonio-header">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="add-patrimonio-btn"
                 onClick={() => setShowPatrimonio(!showPatrimonio)}
                 disabled={loading}
@@ -290,7 +260,7 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
               </button>
               <label htmlFor="patrimonio">Patrimônio (opcional)</label>
             </div>
-            
+
             {showPatrimonio && (
               <input
                 type="text"
@@ -303,7 +273,7 @@ const TermoCompromisso: React.FC<Props> = ({ onComplete, onUrlGenerated }) => {
                 className="patrimonio-input"
               />
             )}
-          </div>   
+          </div>
 
           <div className="form-group">
             <label htmlFor="data">Data</label>

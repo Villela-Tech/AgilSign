@@ -261,79 +261,73 @@
 }
 
 .filters-header {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 1.5rem;
   margin-bottom: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .dashboard-filters {
   display: flex;
   gap: 1rem;
+  margin-bottom: 2rem;
   align-items: center;
-  justify-content: space-between;
 }
 
 .search-container {
-  flex: 1;
   position: relative;
-  margin-right: 1rem;
+  flex: 1;
 }
 
-.status-filter {
-  width: 180px;
-  padding: 0.75rem 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background-color: white;
-  color: #1e293b;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  background-size: 1rem;
-  padding-right: 2.5rem;
-  flex-shrink: 0;
-}
-
-.status-filter:hover {
-  border-color: #6B8DE6;
-}
-
-.status-filter:focus {
-  outline: none;
-  border-color: #6B8DE6;
-  box-shadow: 0 0 0 2px rgba(107, 141, 230, 0.2);
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6B7280;
+  font-size: 1rem;
 }
 
 .global-search {
   width: 100%;
-  padding: 0.75rem 1rem 0.75rem 2.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  padding: 0.5rem 1rem 0.5rem 2.5rem;
+  border: 1px solid #E5E7EB;
+  border-radius: 0.375rem;
   font-size: 0.875rem;
-  color: #1e293b;
-  transition: all 0.2s ease;
-  background: white;
+  color: #374151;
+  background-color: white;
+  transition: border-color 0.2s;
 }
 
 .global-search:focus {
   outline: none;
-  border-color: #6B8DE6;
-  box-shadow: 0 0 0 2px rgba(107, 141, 230, 0.2);
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
-.search-container .search-icon {
-  position: absolute;
-  left: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #64748b;
-  font-size: 1.125rem;
+.status-filter,
+.order-filter {
+  padding: 0.5rem 2rem 0.5rem 1rem;
+  border: 1px solid #E5E7EB;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: #374151;
+  background-color: white;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 1.5em 1.5em;
+  min-width: 160px;
+}
+
+.status-filter:focus,
+.order-filter:focus {
+  outline: none;
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
 .icon-button {
@@ -447,6 +441,17 @@
   padding-left: 1.25rem;
 }
 
+.termo-details p span {
+  color: #333333;
+  font-weight: 500;
+}
+
+.termo-details p .serial-number {
+  color: #666666;
+  font-weight: normal;
+  margin-left: 0.25rem;
+}
+
 .termo-details strong {
   color: #333333;
   font-weight: 500;
@@ -474,93 +479,94 @@
 
 .termo-footer {
   margin-top: auto;
-  border-top: 1px solid rgba(81, 197, 234, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%;
-  padding-top: 0.75rem;  
-  margin-left: -1.25rem;
-  margin-right: -1.25rem;
-  padding-left: 1.25rem;
-  padding-right: 1.25rem;
-  padding-bottom: 0;
+  padding-top: 0.5rem;
 }
 
 .termo-actions {
   display: flex;
-  align-items: center;
   gap: 0.5rem;
 }
 
 .action-button {
   width: 32px;
   height: 32px;
-  border: 1px solid rgba(81, 197, 234, 0.2);
+  min-width: 32px;
+  min-height: 32px;
+  border: none;
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
   cursor: pointer;
+  font-size: 1rem;
   transition: all 0.2s ease;
-  background: transparent;
+  padding: 0;
+  flex-shrink: 0;
 }
 
 .action-button:hover {
   transform: translateY(-2px);
 }
 
-.link-button {
-  color: #51C5EA;
-  border-color: rgba(81, 197, 234, 0.3);
+.action-button.link-button {
+  color: #f00404;
+  background-color: rgba(37, 152, 190, 0.1);
 }
 
-.link-button:hover {
-  background: rgba(81, 197, 234, 0.08);
-  border-color: #51C5EA;
+.action-button.link-button:hover {
+  background-color: rgba(85, 157, 238, 0.2);
 }
 
-.delete-button {
-  color: #FF4B8B;
-  border-color: rgba(255, 75, 139, 0.3);
+.action-button.edit-button {
+  color: #10b981;
+  background-color: rgba(16, 185, 129, 0.1);
 }
 
-.delete-button:hover {
-  background: rgba(255, 75, 139, 0.08);
-  border-color: #FF4B8B;
+.action-button.edit-button:hover {
+  background-color: rgba(16, 185, 129, 0.2);
+}
+
+.action-button.delete-button {
+  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.action-button.delete-button:hover {
+  background-color: rgba(252, 76, 76, 0.2);
 }
 
 .visualizar-button {
+margin-top: 41px;
   background: transparent;
   color: #51C5EA;
-  border: none;
+  border: 1px solid #51C5EA;
   font-size: 0.85rem;
   font-weight: 500;
-  padding: 0.5rem 0.75rem;
+  padding: 0.35rem 0.75rem;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
-  position: relative;
   display: flex;
   align-items: center;
+  gap: 0.35rem;
 }
 
 .visualizar-button:hover {
   background: rgba(81, 197, 234, 0.08);
-  border-color: #51C5EA;
+  transform: translateX(2px);
 }
 
 .visualizar-button::after {
   content: '→';
-  opacity: 0;
-  transform: translateX(-5px);
-  transition: all 0.2s ease;
+  font-size: 1rem;
+  transition: transform 0.2s ease;
 }
 
 .visualizar-button:hover::after {
-  opacity: 1;
-  transform: translateX(0);
+  transform: translateX(2px);
 }
 
 .dashboard-loading {
@@ -754,8 +760,9 @@
   }
 
   .action-button {
-    width: 42px;
-    height: 42px;
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
   }
 }
 

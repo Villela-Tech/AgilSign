@@ -35,9 +35,11 @@ const Login = () => {
       // Salva o token e os dados do usuário
       authService.setToken(response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
+      localStorage.setItem('userRole', response.user.role);
       
       console.log('Token salvo:', response.token);
       console.log('Usuário salvo:', response.user);
+      console.log('Role salvo:', response.user.role);
 
       // Redireciona para o dashboard
       navigate('/dashboard');

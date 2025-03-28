@@ -15,7 +15,7 @@ const create = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { nome, sobrenome, email, equipamento, status } = req.body;
+    const { nome, sobrenome, email, equipamento, status, numeroSerie, equipe, patrimonio, responsavelId } = req.body;
     const urlAcesso = gerarUrlAcesso();
 
     const termo = await Termo.create({
@@ -24,7 +24,11 @@ const create = async (req, res) => {
       email,
       equipamento,
       status: status || 'pendente',
-      urlAcesso
+      urlAcesso,
+      numeroSerie,
+      equipe,
+      patrimonio,
+      responsavel_id: responsavelId
     });
 
     res.status(201).json({
@@ -141,7 +145,7 @@ const sign = async (req, res) => {
 // Atualizar termo
 const update = async (req, res) => {
   try {
-    const { nome, sobrenome, email, equipamento, status, assinatura } = req.body;
+    const { nome, sobrenome, email, equipamento, equipe, numeroSerie, patrimonio, status, assinatura } = req.body;
     const termo = await Termo.findByPk(req.params.id);
     
     if (!termo) {
@@ -153,6 +157,9 @@ const update = async (req, res) => {
       sobrenome,
       email,
       equipamento,
+      equipe,
+      numeroSerie,
+      patrimonio,
       status,
       assinatura
     });

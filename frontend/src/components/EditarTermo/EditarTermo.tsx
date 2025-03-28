@@ -90,7 +90,6 @@ const EditarTermo: React.FC = () => {
           equipe: termo.equipe || '',
           numeroSerie: termo.numeroSerie || '',
           patrimonio: termo.patrimonio || '',
-          responsavelId: termo.responsavelId
         });
         
         // Mostrar campo de patrimônio se estiver preenchido
@@ -113,7 +112,7 @@ const EditarTermo: React.FC = () => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'responsavelId' ? (value ? parseInt(value) : undefined) : value
+      [name]: value
     }));
     setError(null);
   };
@@ -133,10 +132,6 @@ const EditarTermo: React.FC = () => {
     }
     if (!formData.numeroSerie.trim()) {
       setError('Número de série é obrigatório');
-      return false;
-    }
-    if (!formData.responsavelId) {
-      setError('Responsável pela entrega é obrigatório');
       return false;
     }
     return true;
@@ -178,9 +173,9 @@ const EditarTermo: React.FC = () => {
       if (response) {
         setSuccess("Termo de compromisso atualizado com sucesso!");
         
-        // Aguardar um pouco antes de redirecionar
+        // Redirecionar para a tela de login após um breve delay
         setTimeout(() => {
-          navigate(`/visualizar/${id}`);
+          navigate('/login');
         }, 1500);
       }
     } catch (error) {
@@ -363,30 +358,6 @@ const EditarTermo: React.FC = () => {
               />
             </div>
           </div>
-
-          <div className="form-group">
-            <label htmlFor="responsavelId">Responsável pela Entrega</label>
-            <select
-              id="responsavelId"
-              name="responsavelId"
-              value={formData.responsavelId || ''}
-              onChange={handleChange}
-              required
-              disabled={saving || loadingUsuarios}
-              className="form-select"
-            >
-              <option value="">Selecione um responsável</option>
-              {usuarios.map(usuario => (
-                <option key={usuario.id} value={usuario.id}>
-                  {usuario.name}
-                </option>
-              ))}
-            </select>
-            {loadingUsuarios && (
-              <div className="select-loading">Carregando usuários...</div>
-            )}
-          </div>
-
           <div className="form-group patrimonio-group">
             <div className="patrimonio-label-container">
               <label>Patrimônio (opcional)</label>
@@ -426,20 +397,23 @@ const EditarTermo: React.FC = () => {
             >
               Cancelar
             </button>
-            <button 
-              type="submit" 
-              className="salvar-button"
-              disabled={saving}
-            >
-              {saving ? (
+            {saving ? (
+              <div className="loading-container">
                 <Lottie
                   animationData={loadingAnimation}
                   style={{ width: 30, height: 30 }}
                 />
-              ) : (
-                'Salvar Alterações'
-              )}
-            </button>
+                <span>Salvando...</span>
+              </div>
+            ) : (
+              <button 
+                type="submit" 
+                className="salvar-button"
+                disabled={saving}
+              >
+                Salvar Alterações
+              </button>
+            )}
           </div>
         </form>
       </div>

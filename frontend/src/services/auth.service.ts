@@ -1,4 +1,4 @@
-import { api } from './api';
+import api from './api';
 
 export interface LoginResponse {
   token: string;
@@ -13,7 +13,7 @@ export interface LoginResponse {
 export const authService = {
   async login(email: string, password: string): Promise<LoginResponse> {
     try {
-      const response = await api.post<LoginResponse>('/auth/login', {
+      const response = await api.post<LoginResponse>('/api/auth/login', {
         email,
         password,
       });
@@ -25,7 +25,7 @@ export const authService = {
 
   async register(name: string, email: string, password: string, role: string = 'user'): Promise<LoginResponse> {
     try {
-      const response = await api.post<LoginResponse>('/auth/register', {
+      const response = await api.post<LoginResponse>('/api/auth/register', {
         name,
         email,
         password,
@@ -47,9 +47,30 @@ export const authService = {
 
   removeToken(): void {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('userRole');
   },
 
   isAuthenticated(): boolean {
     return !!this.getToken();
   },
+
+  logout: async () => {
+    try {
+      await api.post('/api/auth/logout');
+      // Limpar dados do localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userName');
+      
+      // Limpar outros dados de sessão se necessário
+      localStorage.removeItem('termos_updated');
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      throw error;
+    }
+  }
 }; 

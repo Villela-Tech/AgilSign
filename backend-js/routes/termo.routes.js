@@ -9,6 +9,9 @@ const termoValidation = [
   check('sobrenome').notEmpty().withMessage('Sobrenome é obrigatório'),
   check('email').isEmail().withMessage('Email inválido'),
   check('equipamento').notEmpty().withMessage('Equipamento é obrigatório'),
+  check('equipe').notEmpty().withMessage('Equipe é obrigatória'),
+  check('numeroSerie').notEmpty().withMessage('Número de série é obrigatório'),
+  check('patrimonio').optional(),
   check('status').optional().isIn(['pendente', 'assinado', 'cancelado']).withMessage('Status inválido')
 ];
 

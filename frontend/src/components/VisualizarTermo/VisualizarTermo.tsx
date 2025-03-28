@@ -287,7 +287,7 @@ const VisualizarTermo: React.FC = () => {
                 <div className="detalhe-item">
                   <span className="detalhe-label">Número de Série:</span>
                   <span className="detalhe-valor">
-                    {termo.numeroSerie ? termo.numeroSerie : "Não informado"}
+                    {termo.numeroSerie || "Não informado"}
                   </span>
                 </div>
                 
@@ -301,13 +301,6 @@ const VisualizarTermo: React.FC = () => {
                 <div className="detalhe-item">
                   <span className="detalhe-label">Responsável pelo Recebimento:</span>
                   <span className="detalhe-valor">{termo.nome} {termo.sobrenome}</span>
-                </div>
-
-                <div className="detalhe-item">
-                  <span className="detalhe-label">Responsável pela Entrega:</span>
-                  <span className="detalhe-valor">
-                    {termo.responsavelNome || (termo.responsavelId ? `ID: ${termo.responsavelId}` : "Não informado")}
-                  </span>
                 </div>
               </div>
             </div>
@@ -388,7 +381,6 @@ const VisualizarTermo: React.FC = () => {
                     <div className="log-icon pending">⏳</div>
                     <div className="log-content">
                       <span className="log-title">Aguardando Assinatura</span>
-                      <span className="log-details">Enviado para: {termo.email}</span>
                     </div>
                   </div>
                 )}
@@ -401,7 +393,7 @@ const VisualizarTermo: React.FC = () => {
       {showUrlModal && selectedUrlAcesso && (
         <UrlModal
           urlAcesso={selectedUrlAcesso}
-          onClose={() => {
+          onClose={() => { 
             setShowUrlModal(false);
             setSelectedUrlAcesso(null);
           }}

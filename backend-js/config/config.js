@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 const BASE_URL = 'apiagilsign.villelatech.com.br';
-const PORT = process.env.PORT || 443;
+const PORT = process.env.PORT || 80;
 
 module.exports = {
   // URL base da aplicação
@@ -9,7 +9,7 @@ module.exports = {
   PORT,
 
   // URL completa com porta
-  API_URL: `https://${BASE_URL}`,
+  API_URL: `http://${BASE_URL}`,
 
   // Configurações do banco de dados
   database: {

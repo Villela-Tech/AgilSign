@@ -92,44 +92,66 @@ const Dashboard: React.FC = () => {
   const [selectedUrlAcesso, setSelectedUrlAcesso] = useState<string | null>(null);
   const [activeMenu, setActiveMenu] = useState<string>('visaoGeral');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isAdmin, setIsAdmin] = useState(false);
   const itemsPerPage = 8; // 8 itens por linha, 2 linhas
   const maxPagesToShow = 5;
-
-  // Define isAdmin to check for admin role
-  const isAdmin = true; // Replace with actual admin check
+  const [sortOrder, setSortOrder] = useState<'recentes' | 'antigos' | 'alfabetico'>('recentes');
 
   useEffect(() => {
-    carregarTermos();
-  }, []);
+    const checkAuthAndLoadData = async () => {
+      try {
+        // Verificar se existe um token no localStorage
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.log('Token não encontrado, redirecionando para login');
+          navigate('/login');
+          return;
+        }
 
-  const carregarTermos = async () => {
-    try {
-      const data = await TermoService.listar();
-      // Converter TermoCompromisso[] para TermoDetalhes[]
-      const termosDetalhes = data.map(termo => ({
-        id: termo.id.toString(),
-        nome: termo.nome || '',
-        sobrenome: termo.sobrenome || '',
-        email: termo.email || '',
-        equipamento: termo.equipamento || '',
-        status: termo.status === 'cancelado' ? 'pendente' : termo.status || 'pendente',
-        dataCriacao: termo.created_at || new Date().toISOString(),
-        urlAcesso: termo.urlAcesso || '',
-        created_at: termo.created_at || new Date().toISOString(),
-        updated_at: termo.updated_at || new Date().toISOString()
-      }));
-      setTermos(termosDetalhes);
-      setError(null);
-      return termosDetalhes;
-    } catch (err) {
-      console.error('Erro ao carregar termos:', err);
-      setTermos([]);
-      setError('Erro ao carregar os termos. Por favor, tente novamente.');
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
+        // Verificar se o usuário é admin
+        const userRole = localStorage.getItem('userRole');
+        setIsAdmin(userRole === 'admin');
+
+        // Se não for admin e tentar acessar a rota de usuários, redirecionar
+        if (!isAdmin && location.pathname === '/users') {
+          navigate('/');
+          return;
+        }
+
+        // Carregar os termos
+        setLoading(true);
+        const response = await TermoService.listar();
+        // Converter TermoCompromisso[] para TermoDetalhes[]
+        const termosDetalhes = response.map(termo => ({
+          id: termo.id.toString(),
+          nome: termo.nome || '',
+          sobrenome: termo.sobrenome || '',
+          email: termo.email || '',
+          equipamento: termo.equipamento || '',
+          numeroSerie: termo.numeroSerie ? termo.numeroSerie.trim() : 'Não informado',
+          patrimonio: termo.patrimonio || '',
+          status: termo.status === 'cancelado' ? 'pendente' : termo.status || 'pendente',
+          dataCriacao: termo.created_at || new Date().toISOString(),
+          urlAcesso: termo.urlAcesso || '',
+          created_at: termo.created_at || new Date().toISOString(),
+          updated_at: termo.updated_at || new Date().toISOString()
+        }));
+        setTermos(termosDetalhes);
+      } catch (error: any) {
+        console.error('Erro ao carregar dados:', error);
+        setError('Erro ao carregar os termos. Por favor, tente novamente.');
+        if (error.response?.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('userRole');
+          navigate('/login');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuthAndLoadData();
+  }, [navigate, location.pathname, isAdmin]);
 
   const calcularEstatisticas = (): DashboardStats => {
     if (!Array.isArray(termos) || termos.length === 0) {
@@ -157,13 +179,28 @@ const Dashboard: React.FC = () => {
   const filteredTermos = Array.isArray(termos) ? termos.filter(termo => {
     const matchesSearch = (
       termo.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      termo.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      termo.equipamento.toLowerCase().includes(searchTerm.toLowerCase())
+      termo.sobrenome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      termo.equipamento.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (termo.numeroSerie && termo.numeroSerie.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     const matchesStatus = filterStatus === 'todos' || termo.status === filterStatus;
 
     return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    // Ordenação dos termos
+    switch (sortOrder) {
+      case 'recentes':
+        return new Date(b.created_at || b.dataCriacao || 0).getTime() - 
+               new Date(a.created_at || a.dataCriacao || 0).getTime();
+      case 'antigos':
+        return new Date(a.created_at || a.dataCriacao || 0).getTime() - 
+               new Date(b.created_at || b.dataCriacao || 0).getTime();
+      case 'alfabetico':
+        return a.nome.localeCompare(b.nome);
+      default:
+        return 0;
+    }
   }) : [];
   
   // Cálculo para paginação
@@ -237,7 +274,6 @@ const Dashboard: React.FC = () => {
     if (confirmDelete) {
       try {
         await TermoService.excluir(confirmDelete);
-        carregarTermos();
         setError(null);
       } catch (err: any) {
         const mensagem = err.response?.data?.message || 'Erro ao excluir o termo. Por favor, tente novamente.';
@@ -281,7 +317,6 @@ const Dashboard: React.FC = () => {
       setSelectedUrlAcesso(url);
       setShowUrlModal(true);
       setShowForm(false);
-      carregarTermos(); // Atualiza a lista de termos após criar um novo
       return;
     }
     
@@ -305,9 +340,6 @@ const Dashboard: React.FC = () => {
               setSelectedUrlAcesso(termoData.urlAcesso);
               setShowUrlModal(true);
               setShowForm(false);
-              
-              // Atualizar a lista de termos
-              carregarTermos();
             }
           })
           .catch(error => {
@@ -331,7 +363,7 @@ const Dashboard: React.FC = () => {
     }, 150);
   };
 
-  // Update menuItems to conditionally include 'Usuários'
+  // Update menuItems to only include 'Usuários' if user is admin
   const menuItems: MenuItem[] = [
     {
       icon: '📊',
@@ -345,23 +377,26 @@ const Dashboard: React.FC = () => {
       isActive: activeMenu === 'criarTermo',
       onClick: () => handleMenuClick('criarTermo')
     },
+
     {
       icon: '✍️',
       text: 'Termos Pendentes',
       isActive: activeMenu === 'termosPendentes',
       onClick: () => handleMenuClick('termosPendentes')
     },
-    isAdmin && {
-      text: 'Administrador',
-      type: 'section' as const
-    },
-    isAdmin && {
-      icon: '👥',
-      text: 'Usuários',
-      isActive: activeMenu === 'usuarios',
-      onClick: () => handleMenuClick('usuarios')
-    }
-  ].filter(Boolean); // Filter out false values
+    ...(isAdmin ? [
+      {
+        text: 'Administrador',
+        type: 'section' as const
+      },
+      {
+        icon: '👥',
+        text: 'Usuários',
+        isActive: activeMenu === 'usuarios',
+        onClick: () => handleMenuClick('usuarios')
+      }
+    ] : [])
+  ];
 
   const riskMetrics = [
     {
@@ -462,7 +497,7 @@ const Dashboard: React.FC = () => {
                   <input
                     type="text"
                     className="global-search"
-                    placeholder="Buscar termos..."
+                    placeholder="Buscar por nome, nº série ou equipamento..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -475,6 +510,15 @@ const Dashboard: React.FC = () => {
                   <option value="todos">Todos os Status</option>
                   <option value="pendente">Pendentes</option>
                   <option value="assinado">Assinados</option>
+                </select>
+                <select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value as 'recentes' | 'antigos' | 'alfabetico')}
+                  className="order-filter"
+                >
+                  <option value="recentes">Mais recentes</option>
+                  <option value="antigos">Mais antigos</option>
+                  <option value="alfabetico">Ordem alfabética</option>
                 </select>
               </div>
             </div>
@@ -510,7 +554,10 @@ const Dashboard: React.FC = () => {
                 transition={{ type: "spring" }}
               >
                 <p>{error}</p>
-                <button onClick={carregarTermos}>Tentar novamente</button>
+                <button onClick={() => {
+                  localStorage.removeItem('token');
+                  navigate('/login');
+                }}>Tentar novamente</button>
               </motion.div>
             ) : filteredTermos.length === 0 ? (
               <motion.div
@@ -552,11 +599,19 @@ const Dashboard: React.FC = () => {
                         <p>
                           <strong>Data:</strong> {formatarData(termo.dataCriacao)}
                         </p>
+                        <p className="numero-serie">
+                          <strong>Nº Série:</strong> <span className="serial-number">{termo.numeroSerie}</span>
+                        </p>
+                        {termo.patrimonio && (
+                          <p>
+                            <strong>Patrimônio:</strong> {termo.patrimonio}
+                          </p>
+                        )}
                       </div>
                       <div className="termo-footer">
-                        {termo.status === 'pendente' ? (
-                          <>
-                            <div className="termo-actions">
+                        <div className="termo-actions">
+                          {termo.status === 'pendente' && (
+                            <>
                               <button
                                 className="action-button link-button"
                                 onClick={(e) => handleGerarLink(e, termo)}
@@ -578,19 +633,12 @@ const Dashboard: React.FC = () => {
                               >
                                 🗑️
                               </button>
-                            </div>
-                            <button className="visualizar-button">
-                              Visualizar
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <div className="termo-actions"></div>
-                            <button className="visualizar-button">
-                              Visualizar
-                            </button>
-                          </>
-                        )}
+                            </>
+                          )}
+                        </div>
+                        <button className="visualizar-button">
+                          Visualizar
+                        </button>
                       </div>
                     </motion.div>
                   ))}

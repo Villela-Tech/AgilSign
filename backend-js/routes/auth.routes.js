@@ -1,6 +1,6 @@
 const { Router } = require('express');
 const { body } = require('express-validator');
-const { register, login } = require('../controllers/auth.controller');
+const { register, login, logout } = require('../controllers/auth.controller');
 
 const router = Router();
 
@@ -22,5 +22,6 @@ const loginValidation = [
 // Rotas
 router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
+router.post('/logout', logout);
 
 module.exports = router; 

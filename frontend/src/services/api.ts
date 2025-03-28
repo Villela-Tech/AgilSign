@@ -1,13 +1,14 @@
 import axios from 'axios';
+import type { AxiosError, AxiosResponse } from 'axios';
 import { generateTermoRecebimento } from './pdfService';
 
 export const API_URL = 'https://apiagilsign.villelatech.com.br';
 
 // URL base do frontend
-export const FRONTEND_URL = 'http://ville5113.c44.integrator.host';
+export const FRONTEND_URL = 'https://ville5113.c44.integrator.host';
 
 const config = {
-  baseURL: `${API_URL}/api`,
+  baseURL: API_URL,
   timeout: 30000, // 30 segundos
   headers: {
     'Content-Type': 'application/json',
@@ -23,61 +24,34 @@ const publicRoutes = [
   '/api/termos/assinar/'
 ];
 
-// Interceptor para adicionar o token de autenticação
-api.interceptors.request.use((config) => {
-  try {
-    // Verifica se a URL atual é uma rota pública
-    const isPublicRoute = publicRoutes.some(route => config.url?.includes(route));
-    console.log('URL atual:', config.url);
-    console.log('É rota pública?', isPublicRoute);
-    
-    if (!isPublicRoute) {
-      const token = localStorage.getItem('token');
-      if (token && config.headers) {
-        config.headers['Authorization'] = `Bearer ${token}`;
-        console.log('Token adicionado ao cabeçalho:', token);
-      } else {
-        console.log('Token não encontrado no localStorage');
-      }
-    } else {
-      console.log('Rota pública, não adicionando token');
+// Interceptor para adicionar o token em todas as requisições
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    
-    console.log('Configuração da requisição:', {
-      url: config.url,
-      method: config.method,
-      headers: config.headers,
-      data: config.data
-    });
+    // Adicionar timestamp para evitar cache
+    config.params = {
+      ...(config.params || {}),
+      _t: new Date().getTime()
+    };
     return config;
-  } catch (error) {
-    console.error('Erro ao processar token:', error);
-    return config;
+  },
+  (error: AxiosError) => {
+    return Promise.reject(error);
   }
-}, (error) => {
-  console.error('Erro no interceptor de requisição:', error);
-  return Promise.reject(error);
-});
+);
 
 // Interceptor para tratar erros de resposta
 api.interceptors.response.use(
-  (response) => {
-    console.log('Resposta recebida:', {
-      status: response.status,
-      data: response.data,
-      url: response.config.url
-    });
-    return response;
-  },
-  (error) => {
-    console.log('Erro na resposta - Detalhes:', {
-      url: error.config?.url,
-      status: error.response?.status,
-      message: error.message,
-      response: error.response?.data
-    });
-    
-    // Apenas propaga o erro para ser tratado pelo componente
+  (response: AxiosResponse) => response,
+  (error: AxiosError) => {
+    if (error.response?.status === 401) {
+      // Se receber unauthorized, limpar token e redirecionar para login
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
     return Promise.reject(error);
   }
 );
@@ -161,37 +135,37 @@ interface ApiResponse {
 
 export const TermoService = {
   listar: async (): Promise<TermoCompromisso[]> => {
-    const response = await api.get<TermoCompromisso[]>('/termos');
+    const response = await api.get<TermoCompromisso[]>('/api/termos');
     return response.data;
   },
 
   listarPorResponsavel: async (responsavelId: number): Promise<TermoCompromisso[]> => {
-    const response = await api.get<TermoCompromisso[]>(`/termos/responsavel/${responsavelId}`);
+    const response = await api.get<TermoCompromisso[]>(`/api/termos/responsavel/${responsavelId}`);
     return response.data;
   },
 
   buscarPorId: async (id: number): Promise<any> => {
-    const response = await api.get<any>(`/termos/${id}`);
+    const response = await api.get<any>(`/api/termos/${id}`);
     return response.data;
   },
 
   criar: async (termo: any): Promise<any> => {
-    const response = await api.post<any>('/termos', termo);
+    const response = await api.post<any>('/api/termos', termo);
     return response.data;
   },
 
   atualizar: async (id: number, termo: any): Promise<any> => {
-    const response = await api.put<any>(`/termos/${id}`, termo);
+    const response = await api.put<any>(`/api/termos/${id}`, termo);
     return response.data;
   },
 
   assinar: async (id: number): Promise<TermoCompromisso> => {
-    const response = await api.post<TermoCompromisso>(`/termos/${id}/assinar`);
+    const response = await api.post<TermoCompromisso>(`/api/termos/${id}/assinar`);
     return response.data;
   },
 
   cancelar: async (id: number): Promise<TermoCompromisso> => {
-    const response = await api.post<TermoCompromisso>(`/termos/${id}/cancelar`);
+    const response = await api.post<TermoCompromisso>(`/api/termos/${id}/cancelar`);
     return response.data;
   },
 
@@ -199,7 +173,7 @@ export const TermoService = {
   buscarPorUrl: async (urlAcesso: string): Promise<TermoDetalhes> => {
     console.log('[API] buscarPorUrl - Iniciando com urlAcesso:', urlAcesso);
     try {
-      const response = await api.get<TermoDetalhes>(`/termos/acesso/${urlAcesso}`);
+      const response = await api.get<TermoDetalhes>(`/api/termos/acesso/${urlAcesso}`);
       console.log('[API] buscarPorUrl - Resposta:', response.data);
       return response.data;
     } catch (error: any) {
@@ -217,7 +191,7 @@ export const TermoService = {
     console.log('[API] atualizarStatus - Iniciando com urlAcesso:', urlAcesso);
     console.log('[API] atualizarStatus - Dados:', data);
     try {
-      const response = await api.post<TermoDetalhes>(`/termos/assinar/${urlAcesso}`, {
+      const response = await api.post<TermoDetalhes>(`/api/termos/assinar/${urlAcesso}`, {
         assinatura: data.assinatura
       });
       console.log('[API] atualizarStatus - Resposta:', response.data);
@@ -234,18 +208,18 @@ export const TermoService = {
 
   // Excluir termo
   excluir: async (id: string): Promise<void> => {
-    await api.delete(`/termos/${id}`);
+    await api.delete(`/api/termos/${id}`);
   },
 
   // Gerar URL de acesso para assinatura
   gerarUrlAcesso(urlAcesso: string): string {
-    return `${API_URL}/termos/assinar/${urlAcesso}`;
+    return `${API_URL}/api/termos/assinar/${urlAcesso}`;
   },
 
   downloadPDF: async (id: string): Promise<Blob> => {
     console.log('[API] downloadPDF - Iniciando download para ID:', id);
     try {
-      const response = await api.get<ArrayBuffer>(`/termos/${id}/pdf`, {
+      const response = await api.get<ArrayBuffer>(`/api/termos/${id}/pdf`, {
         responseType: 'arraybuffer',
         headers: {
           'Accept': 'application/pdf'
@@ -268,7 +242,7 @@ export const TermoService = {
   },
 
   gerarLinkVisualizacao: (id: string): string => {
-    return `${API_URL}/termos/visualizar/${id}`;
+    return `${API_URL}/api/termos/visualizar/${id}`;
   }
 };
 
@@ -283,27 +257,27 @@ export interface Usuario {
 
 export const UserService = {
   listar: async (): Promise<Usuario[]> => {
-    const response = await api.get<Usuario[]>('/users');
+    const response = await api.get<Usuario[]>('/api/users');
     return response.data;
   },
 
   buscarPorId: async (id: number): Promise<Usuario> => {
-    const response = await api.get<Usuario>(`/users/${id}`);
+    const response = await api.get<Usuario>(`/api/users/${id}`);
     return response.data;
   },
 
   criar: async (usuario: { name: string; email: string; password: string; role: string }): Promise<Usuario> => {
-    const response = await api.post<Usuario>('/users', usuario);
+    const response = await api.post<Usuario>('/api/users', usuario);
     return response.data;
   },
 
   atualizar: async (id: number, dados: { name?: string; email?: string; password?: string; role?: string }): Promise<Usuario> => {
-    const response = await api.put<Usuario>(`/users/${id}`, dados);
+    const response = await api.put<Usuario>(`/api/users/${id}`, dados);
     return response.data;
   },
 
   excluir: async (id: number): Promise<void> => {
-    await api.delete(`/users/${id}`);
+    await api.delete(`/api/users/${id}`);
   }
 };
 

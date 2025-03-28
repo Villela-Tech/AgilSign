@@ -164,19 +164,9 @@ async function initializeDatabase() {
 async function startServer() {
   await initializeDatabase();
 
-  try {
-    const privateKey = fs.readFileSync(process.env.SSL_KEY_PATH, 'utf8');
-    const certificate = fs.readFileSync(process.env.SSL_CERT_PATH, 'utf8');
-    const credentials = { key: privateKey, cert: certificate };
-
-    const httpsServer = https.createServer(credentials, app);
-    httpsServer.listen(PORT, HOST, () => {
-      logger.info(`Servidor HTTPS rodando em https://${HOST}:${PORT}`);
-    });
-  } catch (error) {
-    logger.error('Erro ao iniciar servidor HTTPS:', error);
-    process.exit(1);
-  }
+  app.listen(PORT, HOST, () => {
+    logger.info(`Servidor HTTP rodando em http://${HOST}:${PORT}`);
+  });
 }
 
 // Tratamento de erros não capturados

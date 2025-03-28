@@ -125,6 +125,10 @@ const AssinarTermo: React.FC = () => {
         <div className="termo-info">
           <p><strong>Nome:</strong> {termo.nome} {termo.sobrenome}</p>
           <p><strong>Equipamento:</strong> {termo.equipamento}</p>
+          <p><strong>Nº Série:</strong> {termo.numeroSerie || 'Não informado'}</p>
+          {termo.patrimonio && (
+            <p><strong>Patrimônio:</strong> {termo.patrimonio}</p>
+          )}
         </div>
         
         <div className="signature-instructions">
